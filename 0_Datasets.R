@@ -1,0 +1,147 @@
+###############################################
+############ CREATING DATASETS ################
+###############################################
+
+# Files needed :
+  # emp_dataset_km_bike_and_car_and_walk_individual.csv
+  # out_merged.csv
+  # INSEE_2019.RDS
+
+
+# Files outputted :
+
+
+
+################################################################################################################################
+#                                                 WALKERS & DRIVERS DATABASE                                                   #
+################################################################################################################################
+
+
+### 1. Load packages ----
+pacman :: p_load(
+  rio,          # Data importation
+  here,         # Localization of files 
+  dplyr,        # Data manipulation
+  forcats,      # Factor conversion
+  epikit,       # Age categories creation
+  janitor       # De-duplication
+)
+
+
+### 2. Import data and functions ----
+
+# EMP 2019 : distances for bike, cars, walking
+emp <- import(here("data", "emp_dataset_km_bike_and_car_and_walk_individual.csv")) 
+
+# Diseases and mortality data
+diseases <- import(here("data", "out_merged.csv"))
+
+# INSEE data
+insee <- import(here("data", "INSEE_2019.RDS"))
+
+
+
+### 3. Creation of subset of emp dataset with only variables needed ----
+
+# Mean walking distance per individual per day 
+emp <- emp %>% 
+  mutate(nbkm_walking = (nbkm_walking_lower + nbkm_walking_upper)/2)
+
+
+# Week time spent walking
+walk_speed <- 4.8  # km/h
+emp <- emp %>% 
+  mutate(week_time = 7*(nbkm_walking)*60/walk_speed) %>% 
+  mutate(week_time_lower = 7*nbkm_walking_lower*60/walk_speed) %>% 
+  mutate(week_time_upper = 7*nbkm_walking_upper*60/walk_speed)
+
+
+# Creation of subset uniting variables of EMP and calculations
+emp_subset <- emp %>% 
+  select(
+    ident_ind,
+    pond_indc,
+    sexe,
+    age,
+    quartile_rev,
+    nbkm_walking,
+    nbkm_walking_lower,
+    nbkm_walking_upper,
+    week_time,
+    week_time_lower,
+    week_time_upper,
+    pond_jour,
+    mdisttot_fin1
+  )
+
+
+# Re-write sexe as female and male and convert as factors
+emp_subset <- emp_subset %>%
+  mutate(sexe = as.character(sexe)) %>%                                 # Conversion in character for function to work well
+  mutate(sexe = fct_recode(sexe, "male" = "1", "female" = "2")) %>%     # Replacing
+  rename(sex = sexe) 
+
+
+# Create age categories
+emp_subset <- emp_subset %>% 
+  mutate(
+    age_grp.x = age_categories(
+      age,
+      lower = 0,
+      upper = 110,
+      by = 5)
+    ) %>% 
+  mutate(age_grp.x = as.character(age_grp.x))
+
+
+# Add population counts per sex
+emp_subset <- emp_subset %>% 
+  left_join(
+      diseases %>% select(pop_age_grp, sex, age_grp.x),    # Matching columns
+      by = c("sex", "age_grp.x")                           # Fill the variables depending on sex and age group
+    ) %>% 
+  rename(pop_age_sex = pop_age_grp)
+
+
+# Add diseases incidences
+emp_subset <- emp_subset %>% 
+  left_join(
+    diseases %>% select(cc_incidence, dem_incidence, bc_incidence, cvd_incidence, diab2_incidence, sex, age_grp.x),    # Matching columns
+    by = c("sex", "age_grp.x")                                                                                         # Fill the variables depending on sex and age group
+  ) 
+
+# Add mortality rates
+emp_subset <- emp_subset %>% 
+  rename(sexe = sex) %>%                                                      # Rename to match INSEE sexe columns
+  mutate(sexe = fct_recode(sexe, "Male" = "male", "Female" = "female")) %>%   # Rename to match INSEE sexe
+  mutate(sexe = fct_relevel(sexe, "Male", "Female"))
+
+
+emp_subset <- emp_subset %>% 
+  left_join(
+    insee %>% select(MR, sexe, age),       # Matching columns
+    by = c("sexe", "age")                  # Fill the variables depending on sexe and age
+  ) %>% 
+  rename(mort_rate = MR)
+
+# Calculate incidence rates
+
+dis <- c("cc_incidence", "dem_incidence", "bc_incidence", "cvd_incidence", "diab2_incidence")
+
+for (i in 1:nrow(emp_subset)) {
+  for(j in dis) {
+    if (!is.na(emp_subset[i, "pop_age_sex"])) {
+      emp_subset[i, paste0(j, "_rate")] <- emp_subset[i, j] / emp_subset[i, "pop_age_sex"]
+    } else {
+      # Si 'pop_age_grp' est NA, on assigne NA à la nouvelle colonne
+      emp_subset[i, paste0(j, "_rate")] <- NA
+      }
+  }
+}
+
+
+
+# Only keep ages 20-89 years ? yes because only incidence data for these periods 
+
+
+
