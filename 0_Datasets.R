@@ -9,15 +9,15 @@
 
 
 # Files outputted :
-
+  # EMP_walkers.xlsx
 
 
 ################################################################################################################################
-#                                                 WALKERS & DRIVERS DATABASE                                                   #
+#                                                      WALKERS DATABASE                                                        #
 ################################################################################################################################
 
 
-### 1. Load packages ----
+### 1. LOAD PACKAGES ----
 pacman :: p_load(
   rio,          # Data importation
   here,         # Localization of files 
@@ -28,7 +28,7 @@ pacman :: p_load(
 )
 
 
-### 2. Import data and functions ----
+### 2. IMPORT DATA ----
 
 # EMP 2019 : distances for bike, cars, walking
 emp <- import(here("data", "emp_dataset_km_bike_and_car_and_walk_individual.csv")) 
@@ -41,7 +41,7 @@ insee <- import(here("data", "INSEE_2019.RDS"))
 
 
 
-### 3. Creation of subset of emp dataset with only variables needed ----
+### 3. CREATION OF SUBSET OF EMP SUBSET WITH ONLY VARIABLES NEEDED ----
 
 # Mean walking distance per individual per day 
 emp <- emp %>% 
@@ -124,8 +124,8 @@ emp_subset <- emp_subset %>%
   ) %>% 
   rename(mort_rate = MR)
 
-# Calculate incidence rates
 
+# Calculate incidence rates
 dis <- c("cc_incidence", "dem_incidence", "bc_incidence", "cvd_incidence", "diab2_incidence")
 
 for (i in 1:nrow(emp_subset)) {
@@ -133,15 +133,54 @@ for (i in 1:nrow(emp_subset)) {
     if (!is.na(emp_subset[i, "pop_age_sex"])) {
       emp_subset[i, paste0(j, "_rate")] <- emp_subset[i, j] / emp_subset[i, "pop_age_sex"]
     } else {
-      # Si 'pop_age_grp' est NA, on assigne NA à la nouvelle colonne
-      emp_subset[i, paste0(j, "_rate")] <- NA
+      emp_subset[i, paste0(j, "_rate")] <- NA        
       }
   }
 }
 
+# Add life-expectancy for each sex
+for (i in 1:nrow(emp_subset)) {
+  emp_subset[i, "life_exp"] = ifelse (
+    emp_subset$sexe[i]== "Female", 
+    85.99324,                            # Life expectancy for women = 85.99324
+    79.59503                             # Life expectancy for men = 79.59503
+    )  
+  }
+
+# Add the years of life remaining, potentially affected by diseases or premature death
+for (i in 1:nrow(emp_subset)) {
+  emp_subset[i,"years_remaining"] = ifelse(
+    emp_subset$life_exp[i]-emp_subset$age[i] >=0,
+    emp_subset$life_exp[i]-emp_subset$age[i],
+    0                                                   # No negatives for individuals above life expectancy
+    )
+}
+
+# Only keep ages 20-89 years 
+emp_subset <-  emp_subset %>% 
+  filter(age >= 20 & age <90)
 
 
-# Only keep ages 20-89 years ? yes because only incidence data for these periods 
+
+### 4. EXPORT EMP SUBSET ----
+export(emp_subset, here("data_clean", "EMP_walkers.xlsx"))
+
+
+
+################################################################################################################################
+#                                                      DRIVERS DATABASE                                                        #
+################################################################################################################################
+
+
+
+
+
+
+
+
+
+
+
 
 
 
