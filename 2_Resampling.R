@@ -168,7 +168,7 @@ for (dis in dis_vec) {
 
 
   # Export the results of HIA outputs for all replications per age group
-export(burden_replicate_age, here("output", "RDS", "HIA_replicate_per_age.rds"))
+export(burden_replicate_age, here("output", "RDS", "HIA_1000replicate_per_age.rds"))
 
 
 
@@ -182,7 +182,7 @@ for (dis in dis_vec) {
 }
 
   # Export the results of HIA outputs for all replications
-export(burden_replicate, here("output", "RDS", "HIA_replicate.rds"))
+export(burden_replicate, here("output", "RDS", "HIA_1000replicate.rds"))
 
 
 
@@ -192,7 +192,7 @@ export(burden_replicate, here("output", "RDS", "HIA_replicate.rds"))
 ################################################################################################################################
 
 # IMPORT DATA (to avoid re-generating Monte-Carlo replications)
-burden_replicate <- import(here("output", "RDS", "HIA_replicate.rds"))
+burden_replicate <- import(here("output", "RDS", "HIA_1000replicate.rds"))
 
 
 ###############       POUR VERIFIER QUE C'EST LA MÊME CHOSE AVEC LES TABLEAUX EN DESSOUS    ##################
@@ -331,7 +331,7 @@ export(reduc_mortality_risk_IC, here("output", "RDS", "reduc_mortality_risk.xlsx
 ################################################################################################################################
 
 # IMPORT DATA (to avoid re-generating Monte-Carlo replications)
-burden_replicate_age <- import(here("output","RDS", "HIA_replicate_per_age.rds"))
+burden_replicate_age <- import(here("output","RDS", "HIA_1000replicate_per_age.rds"))
 
 
 # Mean value for each outcome per disease of random sampled value (no need)
