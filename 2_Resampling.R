@@ -318,7 +318,7 @@ reduc_mortality_risk_IC <- data.frame(
 )
 
 # Export reduction in mortality risk due to walking
-export(reduc_mortality_risk_IC, here("output", "RDS", "reduc_mortality_risk.xlsx"))
+export(reduc_mortality_risk_IC, here("output", "Tables", "reduc_mortality_risk.xlsx"))
 
 
 
