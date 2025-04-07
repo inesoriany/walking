@@ -13,11 +13,16 @@
 
 
 ################################################################################################################################
+################################################################################################################################
 #                                                      WALKERS DATABASE                                                        #
+################################################################################################################################
 ################################################################################################################################
 
 
-### 1. LOAD PACKAGES ----
+################################################################################################################################
+#                                                    1. LOAD PACKAGES                                                          #
+################################################################################################################################
+
 pacman :: p_load(
   rio,          # Data importation
   here,         # Localization of files 
@@ -28,7 +33,9 @@ pacman :: p_load(
 )
 
 
-### 2. IMPORT DATA ----
+################################################################################################################################
+#                                                     2. IMPORT DATA                                                           #
+################################################################################################################################
 
 # EMP 2019 : distances for bike, cars, walking
 emp <- import(here("data", "emp_dataset_km_bike_and_car_and_walk_individual.csv")) 
@@ -40,18 +47,13 @@ diseases <- import(here("data", "out_merged.csv"))
 insee <- import(here("data", "INSEE_2019.RDS"))
 
 
-
-### 3. CREATION OF SUBSET OF EMP SUBSET WITH ONLY VARIABLES NEEDED ----
-
-# Mean walking distance per individual per day 
-emp <- emp %>% 
-  mutate(nbkm_walking = (nbkm_walking_lower + nbkm_walking_upper)/2)
-
+################################################################################################################################
+#                                  3. CREATION OF SUBSET OF EMP SUBSET WITH ONLY VARIABLES NEEDED                              #
+################################################################################################################################
 
 # Week time spent walking
 walk_speed <- 4.8  # km/h
 emp <- emp %>% 
-  mutate(week_time = 7*(nbkm_walking)*60/walk_speed) %>% 
   mutate(week_time_lower = 7*nbkm_walking_lower*60/walk_speed) %>% 
   mutate(week_time_upper = 7*nbkm_walking_upper*60/walk_speed)
 
@@ -64,19 +66,20 @@ emp_subset <- emp %>%
     sexe,
     age,
     quartile_rev,
-    nbkm_walking,
     nbkm_walking_lower,
     nbkm_walking_upper,
-    week_time,
     week_time_lower,
     week_time_upper,
     pond_jour,
     mdisttot_fin1
   )
 
+# Re-write nbkm_walking et week_time, easier to be used in functions
+emp_subset <- emp_subset %>%
+  rename(nbkm_walking = nbkm_walking_lower,   
+         week_time = week_time_lower)   %>%     
 
 # Re-write sexe as female and male and convert as factors
-emp_subset <- emp_subset %>%
   mutate(sexe = as.character(sexe)) %>%                                 # Conversion in character for function to work well
   mutate(sexe = fct_recode(sexe, "male" = "1", "female" = "2")) %>%     # Replacing
   rename(sex = sexe) 
@@ -113,6 +116,7 @@ emp_subset <- emp_subset %>%
 # Add mortality rates
 emp_subset <- emp_subset %>% 
   rename(sexe = sex) %>%                                                      # Rename to match INSEE sexe columns
+  mutate(sexe = as.factor(sexe)) %>% 
   mutate(sexe = fct_recode(sexe, "Male" = "male", "Female" = "female")) %>%   # Rename to match INSEE sexe
   mutate(sexe = fct_relevel(sexe, "Male", "Female"))
 
@@ -138,6 +142,7 @@ for (i in 1:nrow(emp_subset)) {
   }
 }
 
+
 # Add life-expectancy for each sex
 for (i in 1:nrow(emp_subset)) {
   emp_subset[i, "life_exp"] = ifelse (
@@ -161,16 +166,21 @@ emp_subset <-  emp_subset %>%
   filter(age >= 20 & age <90)
 
 
+################################################################################################################################
+#                                                    4. EXPORT EMP SUBSET                                                      #
+################################################################################################################################
 
-### 4. EXPORT EMP SUBSET ----
 export(emp_subset, here("data_clean", "EMP_walkers.xlsx"))
 
 
 
+
+
+################################################################################################################################
 ################################################################################################################################
 #                                                      DRIVERS DATABASE                                                        #
 ################################################################################################################################
-
+################################################################################################################################
 
 
 
