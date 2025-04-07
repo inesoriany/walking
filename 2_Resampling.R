@@ -355,7 +355,7 @@ burden_replicate_mean <- burden_replicate_age %>%
 
 
 
-# Median value for each outcome per disease of random sampled value (no need)
+# Median value for each outcome per disease of random sampled value (no need because we chose central values for this plot)
 burden_replicate_median <- burden_replicate_age %>% 
   group_by(age_grp.x, disease) %>% 
   summarise(median_run = (median(run)),
