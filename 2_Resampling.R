@@ -314,8 +314,9 @@ export(reduc_mortality_risk, here("output", "RDS",  "reduc_mortality_risk_1000_r
 
 
 # IC
-import(here("output", "RDS",  "reduc_mortality_risk_1000_rep.RDS"))
+reduc_mortality_risk <- import(here("output", "RDS",  "reduc_mortality_risk_1000_rep.RDS"))
 
+N = 1000
 IC <-  calc_replicate_IC(reduc_mortality_risk, "mean_mort_reduction_risk")
 reduc_mortality_risk_IC <- data.frame(
   reduc_mortality_risk = paste0(round(IC["50%"], 3), " (", round(IC["2.5%"], 3), " - ", round(IC["97.5%"],3),  ")"),
