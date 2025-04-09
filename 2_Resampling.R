@@ -163,7 +163,7 @@ burden_replicate_age <- data.frame()
 set.seed(123)
 for (dis in dis_vec) {
   burden_dis <- burden_prevented_replicate (health_replicate, dis, N = 1000, "age_grp.x")           # HIA for all runs of 1 disease
-  burden_replicate_age <- bind_rows(burden_replicate_age, burden_dis)                              # HIA for all diseases
+  burden_replicate_age <- bind_rows(burden_replicate_age, burden_dis)                               # HIA for all diseases
 }
 
 
@@ -178,7 +178,7 @@ burden_replicate <- data.frame()
 set.seed(123)
 for (dis in dis_vec) {
   burden_dis <- burden_prevented_replicate (health_replicate, dis, N = 1000, NULL)                    # HIA for all runs of 1 disease
-  burden_replicate <- bind_rows(burden_replicate, burden_dis)                                      # HIA for all diseases
+  burden_replicate <- bind_rows(burden_replicate, burden_dis)                                         # HIA for all diseases
 }
 
   # Export the results of HIA outputs for all replications
@@ -195,7 +195,10 @@ export(burden_replicate, here("output", "RDS", "HIA_1000replicate.rds"))
 burden_replicate <- import(here("output", "RDS", "HIA_1000replicate.rds"))
 
 
-###############       POUR VERIFIER QUE C'EST LA MÊME CHOSE AVEC LES TABLEAUX EN DESSOUS    ##################
+##############################################################
+#                 HIA MORTALITY / MORBIDITY                  #
+##############################################################
+
 # HIA for mortality
 burden_mortality <- burden_replicate %>% 
   filter(disease == "mort")
@@ -203,7 +206,9 @@ burden_mortality <- burden_replicate %>%
 mortality <- burden_mortality %>% 
   group_by(run) %>% 
   summarise(tot_cases = sum(tot_cases),
-            tot_cases_se = sum(tot_cases_se))
+            tot_cases_se = sum(tot_cases_se),
+            tot_daly = sum(tot_daly),
+            tot_daly_se = sum(tot_daly_se))
 
 
 # HIA for morbidity
@@ -214,6 +219,8 @@ morbidity <- burden_morbidity %>%
   group_by(run) %>% 
   summarise(tot_cases = sum(tot_cases),
             tot_cases_se = sum(tot_cases_se),
+            tot_daly = sum(tot_daly),
+            tot_daly_se = sum(tot_daly_se),
             tot_medic_costs = sum(tot_medic_costs),
             tot_medic_costs_se = sum(tot_medic_costs_se))
 
@@ -222,29 +229,27 @@ morbidity <- burden_morbidity %>%
 # IC and mean for each outcome for morta-morbidity
   # Mortality
 set.seed(123)
-calc_replicate_IC(burden_mortality, "tot_cases")                       # Premature deaths prevented (distribution of Monte-Carlo replications)
-calc_IC_Rubin(burden_mortality, "tot_cases")                              # Rubin's rule
+calc_replicate_IC(mortality, "tot_cases")                       # Premature deaths prevented (distribution of Monte-Carlo replications)
+calc_IC_Rubin(mortality, "tot_cases")                              # Rubin's rule
 
 set.seed(123)
-calc_replicate_IC(burden_mortality, "tot_daly")                        # YLL prevented (distribution of Monte-Carlo replications)
-calc_IC_Rubin(burden_mortality, "tot_daly")                               # Rubin's rule
+calc_replicate_IC(mortality, "tot_daly")                        # YLL prevented (distribution of Monte-Carlo replications)
+calc_IC_Rubin(mortality, "tot_daly")                               # Rubin's rule
               
 
 
-  # Morbidity
+  # Morbidity 
 set.seed(123)
-calc_replicate_IC(burden_morbidity, "tot_cases")                       # Chronic diseases prevented (distribution of Monte-Carlo replications)
-calc_IC_Rubin(burden_morbidity, "tot_cases")                              # Rubin's rule
+calc_replicate_IC(morbidity, "tot_cases")                       # Chronic diseases prevented (distribution of Monte-Carlo replications)
+calc_IC_Rubin(morbidity, "tot_cases")                              # Rubin's rule
 
 set.seed(123)
-calc_replicate_IC(burden_morbidity, "tot_daly")                        # YLD prevented (distribution of Monte-Carlo replications)
-calc_IC_Rubin(burden_morbidity, "tot_daly")                               # Rubin's rule
+calc_replicate_IC(morbidity, "tot_daly")                        # YLD prevented (distribution of Monte-Carlo replications)
+calc_IC_Rubin(morbidity, "tot_daly")                               # Rubin's rule
 
 set.seed(123)
-calc_replicate_IC(burden_morbidity, "tot_medic_costs")                 # Medical costs prevented (distribution of Monte-Carlo replications)
-calc_IC_Rubin(burden_morbidity, "tot_medic_costs")                        # Rubin's rule
- 
-#################################################     A ENLEVER       #######################################
+calc_replicate_IC(morbidity, "tot_medic_costs")                 # Medical costs prevented (distribution of Monte-Carlo replications)
+calc_IC_Rubin(morbidity, "tot_medic_costs")                        # Rubin's rule
 
 
 
@@ -297,7 +302,7 @@ N = 1000
 reduc_mortality_risk <- data.frame()
 for (i in 1:N) {
   print(i)
-  burd_mort <- calc_HIA_replicate(health_replicate, "mort")                                    # HIA for death
+  burd_mort <- calc_HIA_replicate(health_replicate, "mort")                                        # HIA for death
   burden_mort <- burd_mort %>% 
     as_survey_design(ids = ident_ind, weights = pond_indc) %>% 
     summarise(mean_mort_reduction_risk = survey_mean(mort_reduction_risk, na.rm = T)) %>%         # mean of reduction of mortality risk
