@@ -263,7 +263,7 @@ burden_disease <- burden_replicate %>%
             tot_cases_se = sum(tot_cases_se),
             tot_daly = sum(tot_daly),
             tot_daly_se = sum(tot_daly_se),
-            tot_medic_costs = sum(tot_medic_costs * 1e-6),                # in million €   
+            tot_medic_costs = sum(tot_medic_costs * 1e-6),                     # in million €   
             tot_medic_costs_se = sum(tot_medic_costs_se * 1e-6),
             tot_soc_costs = sum(tot_daly * vsl * 1e-6),
             tot_soc_costs_se = sum(tot_daly_se * vsl * 1e-6))
@@ -305,7 +305,7 @@ for (i in 1:N) {
   burd_mort <- calc_HIA_replicate(health_replicate, "mort")                                        # HIA for death
   burden_mort <- burd_mort %>% 
     as_survey_design(ids = ident_ind, weights = pond_indc) %>% 
-    summarise(mean_mort_reduction_risk = survey_mean(mort_reduction_risk, na.rm = T)) %>%         # mean of reduction of mortality risk
+    summarise(mean_mort_reduction_risk = survey_mean(mort_reduction_risk, na.rm = T)) %>%          # mean of reduction of mortality risk
     mutate(run = i)
   reduc_mortality_risk <- bind_rows(reduc_mortality_risk, burden_mort)
 }
