@@ -333,7 +333,7 @@ export(reduc_mortality_risk_IC, here("output", "Tables", "reduc_mortality_risk.x
 
 
 ################################################################################################################################
-#                                                     6. DESCRIPTION                                                           #
+#                                                  6. DESCRIPTION (optional)                                                   #
 ################################################################################################################################
 
 # IMPORT DATA (to avoid re-generating Monte-Carlo replications)
