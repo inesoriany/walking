@@ -32,13 +32,7 @@ emp_walkers <- import(here("data_clean", "EMP_walkers.xlsx"))
 emp <- import(here("data", "emp_dataset_km_bike_and_car_and_walk_individual.csv")) 
 
 
-### 3. VARIABLES OF CONSIDERATION ----
-emp_walkers <- emp_walkers %>% 
-  rename(nbkm_walking = nbkm_walking_lower,         # Consider lower distances
-         week_time = week_time_lower)               # Consider the corresponding week duration of walking
-
-
-### 4. DESCRIPTION ----
+### 3. DESCRIPTION ----
 
 # Total population
 emp_20_89 <-  emp %>% 
@@ -87,11 +81,11 @@ indiv <- pond_ind %>%
 
 
 ## Total walked distance per day in 2019
-km_total_day <- svytotal(~nbkm_walking, jour)        # Total km per day
+km_total_day <- svytotal(~nbkm_walking, jour)                   # Total km per day
 km_total_day
 
-km_total <- km_total_day*365.25                       # Total km per year
-km_total_IC <- confint(km_total)                      # Confidence interval
+km_total_2019 <- km_total_day*365.25/7                          # Total km per year
+km_total_2019_IC <- confint(km_total_2019)                      # Confidence interval
 
 # Total walking distances per day, by age group
 svyby(~nbkm_walking, by = ~age_grp.x, jour, svytotal, na.rm = T)  
