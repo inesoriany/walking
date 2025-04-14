@@ -10,6 +10,7 @@
 
 # Files outputted :
   # EMP_walkers.xlsx
+  # EMP_drivers.xlsx
 
 
 ################################################################################################################################
@@ -29,7 +30,8 @@ pacman :: p_load(
   dplyr,        # Data manipulation
   forcats,      # Factor conversion
   epikit,       # Age categories creation
-  janitor       # De-duplication
+  janitor,      # De-duplication
+  survey        # Survey management
 )
 
 
@@ -48,36 +50,38 @@ insee <- import(here("data", "INSEE_2019.RDS"))
 
 
 ################################################################################################################################
-#                                  3. CREATION OF SUBSET OF EMP SUBSET WITH ONLY VARIABLES NEEDED                              #
+#                                                    3. SETTING THE CONSTANTS                                                  #
 ################################################################################################################################
-
-# Week time spent walking
 walk_speed <- 4.8  # km/h
-emp <- emp %>% 
-  mutate(week_time_lower = 7*nbkm_walking_lower*60/walk_speed) %>% 
-  mutate(week_time_upper = 7*nbkm_walking_upper*60/walk_speed)
 
+
+
+################################################################################################################################
+#                                  4. CREATION OF SUBSET OF EMP SUBSET WITH ONLY VARIABLES NEEDED                              #
+################################################################################################################################
 
 # Creation of subset uniting variables of EMP and calculations
 emp_subset <- emp %>% 
   select(
     ident_ind,
-    pond_indc,
     sexe,
     age,
     quartile_rev,
+    pond_indc,
+    pond_jour,
     nbkm_walking_lower,
     nbkm_walking_upper,
-    week_time_lower,
-    week_time_upper,
-    pond_jour,
     mdisttot_fin1
   )
 
-# Re-write nbkm_walking et week_time, easier to be used in functions
+# Week time spent walking (min)
+emp_subset <- emp_subset %>% 
+  mutate(week_time = 7*nbkm_walking_lower*60/walk_speed) %>% 
+  mutate(week_time_upper = 7*nbkm_walking_upper*60/walk_speed)
+
+# Re-write nbkm_walking, easier to be used in functions
 emp_subset <- emp_subset %>%
-  rename(nbkm_walking = nbkm_walking_lower,   
-         week_time = week_time_lower)   %>%     
+  rename(nbkm_walking = nbkm_walking_lower) %>% 
 
 # Re-write sexe as female and male and convert as factors
   mutate(sexe = as.character(sexe)) %>%                                 # Conversion in character for function to work well
@@ -166,11 +170,17 @@ emp_subset <-  emp_subset %>%
   filter(age >= 20 & age <90)
 
 
+# Remove column mdisttot_fin1 (not useful for walkers)
+emp_walkers <- emp_subset %>% 
+  select(-mdisttot_fin1)
+
+
 ################################################################################################################################
-#                                                    4. EXPORT EMP SUBSET                                                      #
+#                                                    5. EXPORT EMP SUBSET                                                      #
 ################################################################################################################################
 
-export(emp_subset, here("data_clean", "EMP_walkers.xlsx"))
+export(emp_walkers, here("data_clean", "EMP_walkers.xlsx"))
+
 
 
 
@@ -182,7 +192,30 @@ export(emp_subset, here("data_clean", "EMP_walkers.xlsx"))
 ################################################################################################################################
 ################################################################################################################################
 
+################################################################################################################################
+#                                  4. CREATION OF SUBSET OF EMP SUBSET WITH ONLY VARIABLES NEEDED                              #
+################################################################################################################################
 
+# Selecting only variables of interests for drivers / removing non-relevant variables 
+emp_drivers <- emp_subset %>% 
+  select(-nbkm_walking,
+         -nbkm_walking_upper,
+         -week_time,
+         -week_time_upper)
+
+
+# Week time spent walking if those car distances were walked (min)
+emp_drivers <- emp_drivers %>% 
+  mutate(week_time_shift = 7*mdisttot_fin1*60 / walk_speed) %>% 
+
+# Create a unique identifier
+  mutate(ident_k = 1:nrow(emp_drivers))
+
+################################################################################################################################
+#                                                    5. EXPORT EMP SUBSET                                                      #
+################################################################################################################################
+
+export(emp_drivers, here("data_clean", "EMP_drivers.xlsx"))
 
 
 
