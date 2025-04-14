@@ -183,7 +183,7 @@ calc_HIA_replicate = function(data, dis) {
 
 
 # FUNCTION burden_prevented_replicate : Total of prevented cases, DALY and saved costs, for each disease based on RR random values issued
-burden_prevented_replicate = function(data, dis_vec, N, group){                             # group : Column name (or names) used to group the results (e.g., "age", "sex")
+burden_prevented_replicate = function(data, dis, N, group){                             # group : Column name (or names) used to group the results (e.g., "age", "sex")
   burden_dis <- data.frame()
   
   for (i in 1:N) {                                                                      # N replicates
@@ -263,4 +263,18 @@ HIA_burden_IC = function(data, dis_vec, outcome_vec, IC_func ) {
   }
   return(HIA_burden)
 }
+
+
+
+################################################################################################################################
+################################################################################################################################
+#                                                        3. MODAL SHIFT                                                        #
+################################################################################################################################
+################################################################################################################################
+
+
+
+
+
+
 
