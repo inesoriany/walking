@@ -9,7 +9,9 @@
 
 # Files outputted :
   # plot_modalshift_cases_prevented.tiff : 
-  # plot_modalshift_costs_saved.tiff
+  # plot_modalshift_costs_saved.tiff : 
+  # modalshift_tot_km_drivers.xlsx : Total km walked with IC per scenario
+  # modalshift_CO2_prevented.xlsx : CO2 emissions prevented with IC per scenario
 
 
 ################################################################################################################################
@@ -49,6 +51,8 @@ dist_vec <- c(0.5, 1, 1.5, 2)
 # Percentages of car trips shifted to walking
 perc_vec <- c(0.1, 0.2, 0.3, 0.4, 0.5)
 
+# CO2 emissions per km driven
+CO2_emit <- 124                    # 124g CO2 per km
 
 ##############################################################
 #                          Diseases                          #
@@ -191,21 +195,19 @@ set.seed(123)
 burden_tot <- data.frame()
 for(dist in dist_vec){
   print(paste0("Distance = ", dist))
+  drivers_dist <- emp_drive %>% 
+    filter(!is.na(mdisttot_fin1) & mdisttot_fin1 <= dist)                             # Select the drivers under this distance
   
   burden_perc <- data.frame()
   for (perc in perc_vec){
-    print(paste0("Percentage = ", perc))
-    drivers_dist <- emp_drive %>% 
-      filter(!is.na(mdisttot_fin1) & mdisttot_fin1 <= dist)                             # Select the drivers under this distance
-    nb_drivers_shift <- round(perc*nrow(drivers_dist))
+    print(paste0("Share = ", perc))
     
     N=100                                                                               # N random samples of drivers
     burden_run <- data.frame()
     for(i in 1:N) {
       print(paste0("Run = ", i))
-      ident_drivers <- sample(drivers_dist$ident_k, nb_drivers_shift, replace = FALSE)
       sample_drivers <- drivers_dist %>% 
-        filter(drivers_dist$ident_k %in% ident_drivers) %>% 
+        slice_sample(prop = perc) %>% 
         rename(week_time = week_time_shift)
       
       burden_dis <- data.frame()
@@ -242,8 +244,13 @@ global_shift <- burden_tot %>%
   group_by(distance, percentage) %>% 
   summarise(tot_cases = sum(tot_cases),
             tot_cases_se = sum(tot_cases_se),
-            tot_medic_costs = sum(tot_medic_costs) /1e6,                            # in million €
+            tot_medic_costs = sum(tot_medic_costs) /1e6,                                # in million €
             tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
+
+set.seed(123)
+calc_replicate_IC(global_shift, "tot_cases")
+calc_IC_Rubin(global_shift, "tot_cases")
+
 
 
 # EACH DISEASE + MORTALITY
@@ -306,6 +313,7 @@ ggsave(here("output", "Plots", "plot_modalshift_costs_saved.tiff"),plot = global
 
 
 
+
 ##############################################################
 #                 EACH DISEASE + MORTALITY                   #
 ##############################################################
@@ -347,7 +355,70 @@ for(dis in dis_vec) {
 #                                                       6. DESCRIPTION                                                         #
 ################################################################################################################################
 
-# Total km walked per scenario
+##############################################################
+#                       DISTANCE SHIFTED                     #
+##############################################################
+
+# Total km walked per scenario with IC
+set.seed(123)
+N=100
+tot_table <- data.frame()
+
+for (dist in dist_vec) {
+  print(paste0("Distance = ", dist))
+  drivers_dist <- emp_drive %>% 
+    filter(!is.na(mdisttot_fin1) & mdisttot_fin1 <= dist)                             # Select the drivers under this distance
+  
+  for(perc in perc_vec) {
+    print(paste0("Share = ", perc))
+    
+    tot_km_drivers <- data.frame()                                                    # Reset the dataframe 
+    for(i in 1:N) {
+      print(i)
+      tot_sample <- drivers_dist %>% 
+        filter(pond_jour != "NA") %>% 
+        slice_sample(prop = perc) %>% 
+        as_survey_design(ids= ident_ind, weights = pond_jour) %>% 
+        summarise(tot_km = survey_total(mdisttot_fin1, na.rm = T)*365.25/7)
+        
+      tot_km_drivers <- bind_rows(tot_km_drivers, tot_sample)
+    }
+    IC_km <- calc_replicate_IC(tot_km_drivers, "tot_km") / 1e6                                       # in million km
+    tot_km_IC <- paste0(round(IC_km["50%"], 3), " (", round(IC_km["2.5%"], 3), " - ", round(IC_km["97.5%"], 3), ")")
+    
+    IC_mt <- IC_km * 1e6 * CO2_emit / (1e6*1e6)                                                      # CO2 emissions (in Mt CO2)
+    tot_mt_IC <- paste0(round(IC_mt["50%"], 3), " (", round(IC_mt["2.5%"], 3), " - ", round(IC_mt["97.5%"], 3), ")")
+    
+    tot_table <- bind_rows(tot_table, data.frame(
+      distance_km = dist,
+      percentage = paste0(perc*100, "%"),
+      total_millions_km = tot_km_IC,
+      CO2_emissions_Mt = tot_mt_IC))
+  }
+}
+
+# Contingency table gathering total km walked with IC per scenario
+tot_km_drivers_scenario <- tot_table %>% 
+  select(-CO2_emissions_Mt) %>% 
+  pivot_wider(names_from = percentage, values_from = total_millions_km)
+
+# Export : Total km walked per scenario with IC
+export(tot_km_drivers_scenario, here("output", "Tables", "modalshift_tot_km_drivers.xlsx"))
+ 
+
+
+##############################################################
+#                          EMISSIONS                         #
+##############################################################
+
+# Contingency table gathering CO2 emissions prevented with IC per scenario
+CO2_emissions_scenario <- tot_table %>% 
+  select(-total_millions_km) %>% 
+  pivot_wider(names_from = percentage, values_from = CO2_emissions_Mt)
+
+# Export : CO2 emissions prevented with IC per scenario
+export(CO2_emissions_scenario, here("output", "Tables", "modalshift_CO2_prevented.xlsx"))
+
 
 
 
