@@ -188,7 +188,7 @@ export(burden_replicate, here("output", "RDS", "HIA_1000replicate.rds"))
 
 
 ################################################################################################################################
-#                                                 5. INTERVAL OF CONFIDENCE                                                    #
+#                                                   5. INTERVAL OF CONFIDENCE                                                  #
 ################################################################################################################################
 
 # IMPORT DATA (to avoid re-generating Monte-Carlo replications)
