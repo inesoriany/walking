@@ -244,12 +244,12 @@ global_shift <- burden_tot %>%
   group_by(distance, percentage) %>% 
   summarise(tot_cases = sum(tot_cases),
             tot_cases_se = sum(tot_cases_se),
+            tot_daly = sum(tot_daly),
+            tot_daly_se = sum(tot_daly_se),
             tot_medic_costs = sum(tot_medic_costs) /1e6,                                # in million €
             tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
+  # IC per scenario
 
-set.seed(123)
-calc_replicate_IC(global_shift, "tot_cases")
-calc_IC_Rubin(global_shift, "tot_cases")
 
 
 
@@ -274,6 +274,8 @@ morbidity_shift <- burden_tot %>%
             tot_cases_se = sum(tot_cases_se),
             tot_medic_costs = sum(tot_medic_costs) / 1e6,
             tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
+  # IC per scenario
+
 
 
 ################################################################################################################################
@@ -356,10 +358,31 @@ for(dis in dis_vec) {
 ################################################################################################################################
 
 ##############################################################
+#                       DISTANCE DRIVEN                      #
+##############################################################
+
+# Total distance driven of all drivers for each scenario distance (in km)
+km_driven <- data.frame()
+for(dist in dist_vec) {
+  drivers_dist <- emp_drive %>% 
+    filter(!is.na(mdisttot_fin1) & mdisttot_fin1 <= dist)
+  km_driven_dist <- drivers_dist %>% 
+    filter(pond_jour != "NA") %>% 
+    as_survey_design(ids = ident_ind, weights = pond_jour) %>% 
+    summarise(tot_km = survey_total(mdisttot_fin1, na.rm = T) * 365.25 / 7,
+              tot_mean = survey_mean(mdisttot_fin1, na.rm = T)) %>% 
+    mutate(distance = dist)
+  
+  km_driven <- bind_rows(km_driven, km_driven_dist)
+}
+
+
+
+##############################################################
 #                       DISTANCE SHIFTED                     #
 ##############################################################
 
-# Total km walked per scenario with IC
+# Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
 set.seed(123)
 N=100
 tot_table <- data.frame()
@@ -421,6 +444,39 @@ export(CO2_emissions_scenario, here("output", "Tables", "modalshift_CO2_prevente
 
 
 
+
+
+##############################################################
+#                  ECONOMIC UNIT VALUE (€)                   #
+##############################################################
+
+# Import : Total km walked per scenario with IC
+tot_km_drivers_scenario <- import(here("output", "Tables", "modalshift_tot_km_drivers.xlsx"))
+
+
+# Extract km, km_low and km_sup for each scenario
+tot_km_drivers_IC <- data.frame()
+for(perc in perc_vec){
+  tot_km_perc_IC <- tot_km_drivers_scenario %>% 
+    extract(paste0(perc*100, "%"), into = c("km", "km_low", "km_sup"),
+            regex = "([0-9.]+) \\(([0-9.]+) - ([0-9.]+)\\)",
+            convert = TRUE) %>%                                            # Convert in numeric
+    mutate(percentage = perc)
+  
+  tot_km_drivers_IC <- bind_rows(tot_km_drivers_IC, tot_km_perc_IC) %>% 
+    select(distance_km, percentage, km, km_low, km_sup)
+}
+
+
+# Calculate economic value of 1 km walked per scenario
+
+
+
+
+
+##############################################################
+#                          ACCIDENTS                         #
+##############################################################
 
 
 
