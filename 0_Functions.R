@@ -272,6 +272,23 @@ HIA_burden_IC = function(data, dis_vec, outcome_vec, IC_func ) {
 ################################################################################################################################
 ################################################################################################################################
 
+# FUNCTION unit_value : Calculate the economic value of 1 km walked
+unit_value = function(km, km_low, km_sup, euro, euro_low, euro_sup, N = 1000) {
+  km_sd1 <- (km - km_low) / qnorm(1-0.05/2)
+  km_sd2 <- (km_sup - km) / qnorm(1-0.05/2)
+  km_sd <- mean(c(km_sd1, km_sd2))
+  distr_km <- rnorm(N, km, km_sd)
+  
+  euro_sd1 <- (euro - euro_low) / qnorm(1-0.05/2)
+  euro_sd2 <- (euro_sup - euro) / qnorm(1-0.05/2)
+  euro_sd <- mean(c(euro_sd1, euro_sd2))
+  distr_euro <- rnorm(N, euro, euro_sd)
+  
+  distr_unit <- distr_euro / distr_km
+  
+  return(distr_unit)
+}
+
 
 
 
