@@ -25,11 +25,15 @@ pacman :: p_load(
 
 ### 2. IMPORT DATA ----
 
+# EMP 2019 : distances for bike, cars, walking
+emp <- import(here("data", "emp_dataset_km_bike_and_car_and_walk_individual.csv")) 
+
 # EMP 2019 subset for walkers
 emp_walkers <- import(here("data_clean", "EMP_walkers.xlsx"))
 
-# EMP 2019 : distances for bike, cars, walking
-emp <- import(here("data", "emp_dataset_km_bike_and_car_and_walk_individual.csv")) 
+# EMP 2019 subset for walkers
+emp_drivers <- import(here("data_clean", "EMP_drivers.xlsx"))
+
 
 
 ### 3. DESCRIPTION ----
@@ -41,30 +45,7 @@ emp_20_89 <-  emp %>%
 pop_tot <- sum(emp_20_89$pond_indc)
 pop_tot
 
-################################################################################################################################
-#                                                   SURVEY DESIGNS                                                             #
-################################################################################################################################
 
-
-# Survey design ponderated by day
-ponderation_jour <- emp_walkers %>% 
-  filter(pond_jour != "NA")
-
-jour <- ponderation_jour %>% 
-  as_survey_design(ids = ident_ind,
-                   weights = pond_jour,
-                   strata = c(sexe, age_grp.x),
-                   nest = TRUE)
-
-# Survey design ponderated by individual (for a whole week)
-pond_ind <- emp_walkers %>% 
-  filter (pond_indc != "NA")
-
-indiv <- pond_ind %>% 
-  as_survey_design(ids = ident_ind,
-                   weights = pond_indc,
-                   strata = c(sexe, age_grp.x),
-                   nest = TRUE)
 
 
 
@@ -94,6 +75,26 @@ ggsave(here("output", "Plot", "plot_mean_mortality_rates.tiff"), plot = mean_mor
 ################################################################################################################################
 #                                                          WALKING                                                             #
 ################################################################################################################################
+
+##############################################################
+#                        SURVEY DESIGNS                      #
+##############################################################
+
+# Survey design ponderated by day
+jour <- emp_walkers %>% 
+  filter(pond_jour != "NA") %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_jour,
+                   strata = c(sexe, age_grp.x),
+                   nest = TRUE)
+
+# Survey design ponderated by individual (for a whole week)
+indiv <- emp_walkers %>% 
+  filter (pond_indc != "NA") %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),
+                   nest = TRUE)
 
 
 ##############################################################
@@ -184,9 +185,33 @@ ggsave(here("output", "Plot", "plot_mean_km_walkers.tiff"), plot = mean_km_walke
 #                                                          DRIVING                                                             #
 ################################################################################################################################
 
-# Total distance driven on all drivers
 
-# Proportion of the French adult population reporting any short (<5km) car trip in the past day
-# mean distance driven (km) in the past day among those reporting any car trip according to sex and age
+# Proportion of the French adult population reporting any short (<2km) car trip in the past day according to sex and age
+
+drivers_2km <- emp_drivers %>% 
+  filter(pond_jour != "NA") %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_jour) %>% 
+  group_by(sexe, age_grp.x) %>% 
+  summarise(perc = 100 * survey_mean(mdisttot_fin1 <= 2, na.rm = FALSE)) %>% 
+  rename(Sex = sexe)
+
+perc_drivers_2km 
+
+
+# Mean distance driven (km) in the past day among those reporting any car trip according to sex and age
+drivers <- emp_drivers %>% 
+  filter(pond_jour !="NA", mdisttot_fin1 != 0) %>% 
+  as_survey_design(ids = ident_ind, 
+                   weights = pond_jour) %>% 
+  group_by(sexe, age_grp.x) %>% 
+  summarise(day_mean = survey_mean(mdisttot_fin1)) %>% 
+  rename(Sex = sexe)
+
+
+
+
+
+
 
 
