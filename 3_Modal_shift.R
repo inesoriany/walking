@@ -248,8 +248,32 @@ global_shift <- burden_tot %>%
             tot_daly_se = sum(tot_daly_se),
             tot_medic_costs = sum(tot_medic_costs) /1e6,                                # in million €
             tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
-  # IC per scenario
 
+  # IC per scenario
+set.seed(123)
+global_shift_IC <- data.frame()
+
+for (dist in dist_vec) {
+  for (perc in perc_vec) {
+    scenario <- global_shift %>% 
+      filter(distance == dist & percentage == perc)
+    cases_IC <- as.data.frame(t(calc_replicate_IC(scenario, "tot_cases"))) %>% 
+      rename(cases_low = "2.5%", cases_mean = "50%", cases_sup = "97.5%") %>% 
+      mutate(distance = dist, percentage = perc)
+    
+    daly_IC <- as.data.frame(t(calc_replicate_IC(scenario, "tot_daly"))) %>% 
+      rename(daly_low = "2.5%", daly_mean = "50%", daly_sup = "97.5%") %>% 
+      mutate(distance = dist, percentage = perc)
+    
+    medic_costs_IC <- as.data.frame(t(calc_replicate_IC(scenario, "tot_medic_costs"))) %>% 
+      rename(medic_costs_low = "2.5%", medic_costs_mean = "50%", medic_costs_sup = "97.5%") %>% 
+      mutate(distance = dist, percentage = perc)
+    
+    scenario_IC <- left_join(cases_IC, daly_IC, by = c("distance", "percentage"))
+    scenario_IC <- left_join(scenario_IC, medic_costs_IC, by = c("distance", "percentage"))
+    global_shift_IC <- bind_rows(global_shift_IC, scenario_IC)
+  }
+}
 
 
 
@@ -413,7 +437,7 @@ for (dist in dist_vec) {
     tot_mt_IC <- paste0(round(IC_mt["50%"], 3), " (", round(IC_mt["2.5%"], 3), " - ", round(IC_mt["97.5%"], 3), ")")
     
     tot_table <- bind_rows(tot_table, data.frame(
-      distance_km = dist,
+      distance = dist,
       percentage = paste0(perc*100, "%"),
       total_millions_km = tot_km_IC,
       CO2_emissions_Mt = tot_mt_IC))
@@ -464,13 +488,41 @@ for(perc in perc_vec){
     mutate(percentage = perc)
   
   tot_km_drivers_IC <- bind_rows(tot_km_drivers_IC, tot_km_perc_IC) %>% 
-    select(distance_km, percentage, km, km_low, km_sup)
+    select(distance, percentage, km, km_low, km_sup)
 }
 
 
 # Calculate economic value of 1 km walked per scenario
+set.seed(123)
+unit_value_scenario <- data.frame()
 
-
+for(dist in dist_vec) {
+  for (perc in perc_vec) {
+    scenario_km <- tot_km_drivers_IC %>%                                             # Set parameters
+      filter(distance == dist & percentage == perc)
+    km <- scenario_km %>% 
+      pull(km)
+    km_low <- scenario_km %>% 
+      pull(km_low)
+    km_sup <- scenario_km %>% 
+      pull(km_sup)
+    
+    scenario_medic_costs <- global_shift_IC %>% 
+      filter(distance == dist & percentage == perc)
+    euro <- scenario_medic_costs %>% 
+      pull(medic_costs_mean)
+    euro_low <- scenario_medic_costs %>% 
+      pull(medic_costs_low)
+    euro_sup <- scenario_medic_costs %>% 
+      pull(medic_costs_sup)
+    
+    unit <- unit_value(km, km_low, km_sup, euro, euro_low, euro_sup, N=1000)
+    unit_scenario <- as.data.frame(t(quantile(unit, probs = c(0.025, 0.5, 0.975)))) %>% 
+      mutate(distance = dist, perentage = perc)
+    
+    unit_value_scenario <- bind_rows(unit_value_scenario, unit_scenario)
+  }
+}
 
 
 
