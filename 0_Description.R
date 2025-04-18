@@ -107,8 +107,8 @@ indiv <- emp_walkers %>%
 km_total_day <- svytotal(~nbkm_walking, jour)                   # Total km per day
 km_total_day
 
-km_total_2019 <- km_total_day*365.25/7                          # Total km per year
-km_total_2019_IC <- confint(km_total_2019)                      # Confidence interval
+km_total_2019 <- as.numeric(svytotal(~nbkm_walking, jour)) *365.25/7                              # Total km per year
+km_total_2019_IC <- as.numeric(confint(svytotal(~nbkm_walking, jour) *365.25/7 ))                 # Confidence interval
 
 # Total walking distances per day, by age group
 svyby(~nbkm_walking, by = ~age_grp.x, jour, svytotal, na.rm = T)  
@@ -181,6 +181,15 @@ ggsave(here("output", "Plots", "plot_mean_km_walkers.tiff"), plot = mean_km_walk
 
 
 
+##############################################################
+#                  RATE OF DEADLY ACCIDENTS                  #
+##############################################################
+
+# Rate of deadly accidents per km from 2019 levels
+deaths_per_km_walked <- 483 / km_total_2019                           # Number of dead walkers per km in 2019 (ONISR 2020 - Bilan 2019)
+deaths_per_km_walked
+
+
 
 
 ################################################################################################################################
@@ -236,7 +245,5 @@ plot(mean_km_drivers)
 
   # Export plot
 ggsave(here("output", "Plots", "plot_mean_drivers_2km.tiff"), plot = mean_km_drivers_2km)
-
-
 
 
