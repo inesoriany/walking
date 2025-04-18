@@ -113,10 +113,10 @@ ref_anx = ref_anx_m = ref_anx_w <-
   
   
   # mortality (Kelly et al.) 
-  ref_mort = ref_mort_m =ref_mort_w <- 168                         # 168 minutes per week for walking
-rr_mort_lb=  rr_mort_men_lb =rr_mort_women_lb<-.85         
-rr_mort = rr_mort_men=  rr_mort_women<- .90
-rr_mort_ub =rr_mort_men_ub =rr_mort_women_ub <-.95
+ref_mort = ref_mort_m =ref_mort_w <- 168                         # 168 minutes per week for walking
+rr_mort_lb=  rr_mort_men_lb =rr_mort_women_lb<-.83         
+rr_mort = rr_mort_men=  rr_mort_women<- .89
+rr_mort_ub =rr_mort_men_ub =rr_mort_women_ub <-.96
 
 
 ## Disability weights ----
