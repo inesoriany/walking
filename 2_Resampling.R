@@ -1,15 +1,17 @@
 #################################################
 ############## MULTIPLE IMPUTATION ##############
+##############  linear regression  ##############
 #################################################
 
 # Files needed :
   # EMP_walkers.xlsx
   # 0_Functions.R
 
-
-# Files outputted :
   # HIA_replicate.rds : results of HIA outputs for 100 replications of all diseases
   # HIA_replicate_age.rds : results of HIA outputs for 100 replications per age of all diseases 
+
+
+# Files outputted :
   # HIA_per_disease.xlsx : Prevented cases, DALY and costs per disease (IC from Monte-Carlo distribution)
   # HIA_per_disease_Rubin.xlsx : Prevented cases, DALY and costs per disease (IC from Rubin's rule)
   # reduc_mortality_risk.xlsx : Reduction of mortality risk due to walking in 2019 (IC from Monte-Carlo distribution)
@@ -63,7 +65,7 @@ rr_cc_women_ub <-.98                                        # Disease relative r
 ref_dem = ref_dem_m = ref_dem_w <- 168*33/11.25             # same for men and women
 rr_dem_lb = rr_dem_men_lb =rr_dem_women_lb <-.6 
 rr_dem = rr_dem_men = rr_dem_women <- .72
-rr_dem_ub = rr_dem_men_ub =rr_dem_women_ub<-.86 
+rr_dem_ub = rr_dem_men_ub =rr_dem_women_ub <-.86 
 
 # Breast cancer (Rojas-Rueda et al, 2013)
 ref_bc_w <- 60 
@@ -78,15 +80,15 @@ rr_bc_men_lb <- NA
 
 # Cardiovascular disease (Rojas-Rueda et al, 2013)
 ref_cvd = ref_cvd_m = ref_cvd_w <- 180                       # 3h per week of physical activity of moderate intensity
-rr_cvd_lb = rr_cvd_men_lb =rr_cvd_women_lb<-.79
-rr_cvd = rr_cvd_men = rr_cvd_women<- .84
-rr_cvd_ub = rr_cvd_men_ub =rr_cvd_women_ub<-.90
+rr_cvd_lb = rr_cvd_men_lb =rr_cvd_women_lb <-.79
+rr_cvd = rr_cvd_men = rr_cvd_women <- .84
+rr_cvd_ub = rr_cvd_men_ub =rr_cvd_women_ub <-.90
 
 # type 2 diabetes
 ref_diab2 = ref_diab2_m =ref_diab2_w <- 168*10/11.25
-rr_diab2_lb = rr_diab2_men_lb =rr_diab2_women_lb<-.75
+rr_diab2_lb = rr_diab2_men_lb =rr_diab2_women_lb <-.75
 rr_diab2 = rr_diab2_men = rr_diab2_women <- .83
-rr_diab2_ub = rr_diab2_men_ub =rr_diab2_women_ub<- .91
+rr_diab2_ub = rr_diab2_men_ub =rr_diab2_women_ub <- .91
 
 # Depression (Pearce et al, 2022)
 ref_dep = ref_dep_m = ref_dep_w <- 168                           # 168 minutes per week for walking
@@ -152,15 +154,12 @@ vsl <- 133000
 ################################################################################################################################
 #                                                     4. MONTE-CARLO                                                           #
 ################################################################################################################################
- # Fix a seed to guarantee reproducibility of simulations
-
-
 ## N replications for HIA outcomes (based on random RR generated) per age and disease ----
 health_replicate <- emp_walk
 
 burden_replicate_age <- data.frame()
 
-set.seed(123)
+set.seed(123)                                                              # Fix a seed to guarantee reproducibility of simulations
 for (dis in dis_vec) {
   burden_dis <- burden_prevented_replicate (health_replicate, dis, N = 1000, "age_grp.x")           # HIA for all runs of 1 disease
   burden_replicate_age <- bind_rows(burden_replicate_age, burden_dis)                               # HIA for all diseases
@@ -278,7 +277,7 @@ set.seed(123)
 HIA_per_disease <- HIA_burden_IC(burden_disease, dis_vec, outcome_vec, calc_replicate_IC)
 
   # Export results 
-export(HIA_per_disease, here("output", "Tables", "HIA_per_disease.xlsx"))
+export(HIA_per_disease, here("output", "Tables", "Linear", "HIA_per_disease.xlsx"))
 
 
 
@@ -287,7 +286,7 @@ export(HIA_per_disease, here("output", "Tables", "HIA_per_disease.xlsx"))
 HIA_per_disease_Rubin <- HIA_burden_IC(burden_disease, dis_vec, outcome_vec, calc_IC_Rubin)
 
   # Export results 
-export(HIA_per_disease_Rubin, here("output", "Tables", "HIA_per_disease_Rubin.xlsx"))
+export(HIA_per_disease_Rubin, here("output", "Tables", "Linear", "HIA_per_disease_Rubin.xlsx"))
 
 
 
@@ -324,7 +323,7 @@ reduc_mortality_risk_IC <- data.frame(
 )
 
 # Export reduction in mortality risk due to walking
-export(reduc_mortality_risk_IC, here("output", "Tables", "reduc_mortality_risk.xlsx"))
+export(reduc_mortality_risk_IC, here("output", "Tables", "Linear", "reduc_mortality_risk.xlsx"))
 
 
 
