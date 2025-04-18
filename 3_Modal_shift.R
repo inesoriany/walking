@@ -182,8 +182,8 @@ km_total_2019_IC <- as.numeric(confint(svytotal(~nbkm_walking, jour) *365.25/7 )
 
 
 # Rate of deadly accidents per km from 2019 levels
-deaths_per_km_walked <- 483 / km_total_2019                           # Number of dead walkers in 2019 (ONISR 2020 - Bilan 2019)
-
+deaths_per_km_walked <- 483 / km_total_2019                           # Number of dead walkers per km in 2019 (ONISR 2020 - Bilan 2019)
+deaths_per_km_walked
 
 
 ################################################################################################################################
@@ -529,6 +529,12 @@ for(dist in dist_vec) {
 ##############################################################
 #                          ACCIDENTS                         #
 ##############################################################
+
+
+
+
+
+
 
 
 
