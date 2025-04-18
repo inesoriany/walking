@@ -1,17 +1,24 @@
 #################################################
 ##############     MODAL SHIFT     ##############
+##############  linear regression  ##############
 #################################################
 
 # Files needed :
   # EMP_drivers.xlsx
+  # EMP_walkers.xlsx
   # 0_Functions.R
+
+  # HIA_modal_shift_100replicate.rds : HIA outcomes of 100 replications for each scenario of modal shifts
+  # modalshift_tot_km_drivers.xlsx : Total km walked with IC per scenario
+  
 
 
 # Files outputted :
-  # plot_modalshift_cases_prevented.tiff : 
-  # plot_modalshift_costs_saved.tiff : 
+  # plot_modalshift_cases_prevented.tiff : Total of prevented cases depending on different scenarios of car trips shifted to walk trips
+  # plot_modalshift_costs_saved.tiff : Saved medical costs depending on different scenarios of car trips shifted to walk trips
   # modalshift_tot_km_drivers.xlsx : Total km walked with IC per scenario
   # modalshift_CO2_prevented.xlsx : CO2 emissions prevented with IC per scenario
+  # modalshift_unit_value.xlsx : Economic value of 1 km walked per scenario
 
 
 ################################################################################################################################
@@ -274,7 +281,6 @@ morbidity_shift <- burden_tot %>%
             tot_cases_se = sum(tot_cases_se),
             tot_medic_costs = sum(tot_medic_costs) / 1e6,
             tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
-  # IC per scenario
 
 
 
@@ -310,8 +316,8 @@ global_shift_costs
 
 
 # Export plots
-ggsave(here("output", "Plots", "plot_modalshift_cases_prevented.tiff"), plot = global_shift_cases)
-ggsave(here("output", "Plots", "plot_modalshift_costs_saved.tiff"),plot = global_shift_costs)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_cases_prevented.tiff"), plot = global_shift_cases)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_costs_saved.tiff"),plot = global_shift_costs)
 
 
 
@@ -426,7 +432,7 @@ tot_km_drivers_scenario <- tot_table %>%
   pivot_wider(names_from = percentage, values_from = total_millions_km)
 
 # Export : Total km walked per scenario with IC
-export(tot_km_drivers_scenario, here("output", "Tables", "modalshift_tot_km_drivers.xlsx"))
+export(tot_km_drivers_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_tot_km_drivers.xlsx"))
  
 
 
@@ -440,7 +446,7 @@ CO2_emissions_scenario <- tot_table %>%
   pivot_wider(names_from = percentage, values_from = CO2_emissions_Mt)
 
 # Export : CO2 emissions prevented with IC per scenario
-export(CO2_emissions_scenario, here("output", "Tables", "modalshift_CO2_prevented.xlsx"))
+export(CO2_emissions_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_CO2_prevented.xlsx"))
 
 
 
@@ -451,7 +457,7 @@ export(CO2_emissions_scenario, here("output", "Tables", "modalshift_CO2_prevente
 ##############################################################
 
 # Import : Total km walked per scenario with IC
-tot_km_drivers_scenario <- import(here("output", "Tables", "modalshift_tot_km_drivers.xlsx"))
+tot_km_drivers_scenario <- import(here("output", "Tables", "Linear", "Modal shift", "modalshift_tot_km_drivers.xlsx"))
 
 
 # Extract km, km_low and km_sup for each scenario
@@ -501,20 +507,7 @@ for(dist in dist_vec) {
 }
 
   # Export :economic value of 1 km walked per scenario
-export(unit_value_scenario, here("output", "Tables", "modalshift_unit_value.xlsx"))
-
-
-
-
-
-
-
-
-
-
-
-
-
+export(unit_value_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_unit_value.xlsx"))
 
 
 
