@@ -69,7 +69,7 @@ mean_mortality_rates <- ggplot(mortality, aes(x = age_grp.x, y = mort_rate_mean,
   theme_minimal()
 
 # Export plot
-ggsave(here("output", "Plots", "plot_mean_mortality_rates.tiff"), plot = mean_mortality_rates)
+ggsave(here("output", "Plots", "Description", "plot_mean_mortality_rates.tiff"), plot = mean_mortality_rates)
 
 
 
@@ -177,7 +177,7 @@ mean_km_walkers = ggplot(mean_distance_people, aes(x = age_grp.x, y = mean_dista
 plot(mean_km_walkers)
 
   # Export plot
-ggsave(here("output", "Plots", "plot_mean_km_walkers.tiff"), plot = mean_km_walkers)
+ggsave(here("output", "Plots", "Description", "plot_mean_km_walkers.tiff"), plot = mean_km_walkers)
 
 
 
@@ -218,7 +218,7 @@ perc_drivers_2km <- ggplot(drivers_2km, aes(x = age_grp.x, y = perc,
 plot(perc_drivers_2km)
 
   # Export plot
-ggsave(here("output", "Plots", "plot_drivers_2km.tiff"), plot = perc_drivers_2km)
+ggsave(here("output", "Plots", "Description", "plot_drivers_2km.tiff"), plot = perc_drivers_2km)
 
 
 
@@ -244,6 +244,6 @@ mean_km_drivers_2km <- ggplot(mean_drivers_2km, aes(x = age_grp.x, y = day_mean,
 plot(mean_km_drivers)
 
   # Export plot
-ggsave(here("output", "Plots", "plot_mean_drivers_2km.tiff"), plot = mean_km_drivers_2km)
+ggsave(here("output", "Plots", "Description", "plot_mean_drivers_2km.tiff"), plot = mean_km_drivers_2km)
 
 
