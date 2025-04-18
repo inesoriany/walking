@@ -1,5 +1,6 @@
 #################################################
 ############ HEALTH IMPACT ASSESSMENT ###########
+############    linear regression     ###########
 #################################################
 
 # Files needed :
@@ -170,7 +171,7 @@ vsl <- 133000
 health_walkers <- emp_walk
 for (dis in dis_vec) {
   params <- dis_setting(dis)
-  health_walkers <-  reduction_risk(health_walkers, dis, params$rr_women, params$rr_men, params$exp_ref_women, params$exp_ref_men)
+  health_walkers <-  reduction_risk(health_walkers, dis, params$rr_women, params$rr_men, params$ref_women, params$ref_men)
 }
 
 
@@ -180,14 +181,14 @@ for (dis in dis_vec) {
 health_walkers_ub <- emp_walk
 for (dis in dis_vec) {
   params <- dis_setting(dis)
-  health_walkers_ub <-  reduction_risk(health_walkers_ub, dis, params$rr_women_lb, params$rr_men_lb, params$exp_ref_women, params$exp_ref_men)
+  health_walkers_ub <-  reduction_risk(health_walkers_ub, dis, params$rr_women_lb, params$rr_men_lb, params$ref_women, params$ref_men)
 } # use RR lower bound because the decrease will be higher i.e. the person exposed (walking) is less likely to have the disease  
 
   # Lower bound
 health_walkers_lb <- emp_walk
 for (dis in dis_vec) {
   params <- dis_setting(dis)
-  health_walkers_lb <-  reduction_risk(health_walkers_lb, dis, params$rr_women_ub, params$rr_men_ub, params$exp_ref_women, params$exp_ref_men)
+  health_walkers_lb <-  reduction_risk(health_walkers_lb, dis, params$rr_women_ub, params$rr_men_ub, params$ref_women, params$ref_men)
 }
 
 
@@ -329,7 +330,7 @@ burden_IC <- burden_IC %>%
 
 
 # Export HIA : total of prevented cases, DALY and saved costs per disease
-export(burden_IC, here("output", "Tables", "HIA_walking_2019.xlsx"))
+export(burden_IC, here("output", "Tables", "Linear", "HIA_walking_2019.xlsx"))
 
 
 
@@ -404,7 +405,7 @@ cases_prevented <- ggplot(burden_sex_IC, aes(x = disease, y = tot_cases, ymin = 
 cases_prevented
 
   #Export plot
-ggsave(here("output", "plot_cases_prevented.tiff"), plot = cases_prevented)
+ggsave(here("output", "Plots", "Linear", "plot_cases_prevented.tiff"), plot = cases_prevented)
 
 
 
@@ -439,7 +440,7 @@ daly_prevented <- ggplot(burden_age_IC, aes(x = age_grp.x, y = tot_daly, fill = 
 daly_prevented
 
   #Export plot
-ggsave(here("output", "plot_DALY_prevented.tiff"), plot = daly_prevented)
+ggsave(here("output", "Plots", "Linear", "plot_DALY_prevented.tiff"), plot = daly_prevented)
 
 
 ##############################
@@ -492,8 +493,7 @@ prevented_cases_rev
 ##############################################################
 
 prevented_death <- burden_sex_age_IC %>% 
-  filter(disease == "mort") %>% 
-  rename(Sex = sexe)
+  filter(disease == "Mortality")
 
 
 # Plot : Contribution of the different age groups to premature deaths prevented by walking in 2019
@@ -508,7 +508,7 @@ deaths_prevented <- ggplot(prevented_death, aes(x = age_grp.x, y = tot_cases, ym
 deaths_prevented
 
 # Export plot
-ggsave(here("output", "plot_deaths_prevented.tiff"), plot = deaths_prevented)
+ggsave(here("output", "Plots", "Linear", "plot_deaths_prevented.tiff"), plot = deaths_prevented)
 
 
 
@@ -530,7 +530,7 @@ YLL_prevented <- ggplot(prevented_death, aes(x = age_grp.x, y = tot_daly, ymin =
 YLL_prevented
 
 # Export plot : YLL prevented per sex by walking in 2019 
-ggsave(here("output", "Plot", "plot_YLL_prevented.tiff"), plot = YLL_prevented)
+ggsave(here("output", "Plots", "Linear", "plot_YLL_prevented.tiff"), plot = YLL_prevented)
 
 
 
