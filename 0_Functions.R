@@ -21,11 +21,11 @@ dis_setting = function (dis) {
   rr_men <- get(paste0("rr_", dis, "_men"))
   rr_men_lb <-  get(paste0("rr_", dis, "_men_lb"))
   rr_men_ub <-  get(paste0("rr_", dis, "_men_ub"))
-  exp_ref_women <-  get(paste0("ref_", dis, "_w"))
-  exp_ref_men <- get(paste0("ref_", dis, "_m"))
+  ref_women <-  get(paste0("ref_", dis, "_w"))
+  ref_men <- get(paste0("ref_", dis, "_m"))
   return(data.frame("rr_men" = rr_men, "rr_men_lb" = rr_men_lb, "rr_men_ub" = rr_men_ub,
                     "rr_women" = rr_women, "rr_women_lb" = rr_women_lb, "rr_women_ub" = rr_women_ub,
-                    "exp_ref_women" = exp_ref_women, "exp_ref_men" = exp_ref_men))
+                    "ref_women" = ref_women, "ref_men" = ref_men))
 }
 
 
@@ -37,14 +37,14 @@ dis_setting = function (dis) {
 
 
 ## DISEASE REDUCTION PERCENTAGE ----
-# FUNCTION reduction_risk : Calculate the disease risk reduction percentage for each individual 
+# FUNCTION reduction_risk : Calculate the disease risk reduction percentage for each individual with a linear regression
   # (% of decrease in disease risk comparing to the baseline : if people did not walk)
 
-reduction_risk = function(data, dis, rr_women, rr_men, exp_ref_women, exp_ref_men) {
+reduction_risk = function(data, dis, rr_women, rr_men, ref_women, ref_men) {
   data[[paste0(dis, "_reduction_risk")]] <- ifelse(                        # Calculate risk reduction percentage
     data$sexe == "Female",
-    (1 - rr_women) * data$week_time / exp_ref_women,                       # for women % of decrease for this disease risk
-    (1 - rr_men) * data$week_time / exp_ref_men)                           # for men % of decrease for this disease risk
+    (1 - rr_women) * data$week_time / ref_women,                       # for women % of decrease for this disease risk
+    (1 - rr_men) * data$week_time / ref_men)                           # for men % of decrease for this disease risk
   
   if(any(data$mort_reduction_risk > (1 - 0.45), na.rm = TRUE)) {           # Cap mortality at 55%
     data$mort_reduction_risk <- ifelse(data$mort_reduction_risk > (1 - 0.45), 1 - 0.45, data$mort_reduction_risk)
@@ -52,6 +52,26 @@ reduction_risk = function(data, dis, rr_women, rr_men, exp_ref_women, exp_ref_me
   return(data)
 }
   # To calculate the upper bound of reduction of the relative risk, use RR lower bound because the decrease will be higher i.e. the person exposed (walking) is less likely to have the disease 
+
+
+
+
+# FUNCTION loglinear_reduction_risk : Calculate the disease risk reduction percentage for each individual with a log linear regression
+# (% of decrease in disease risk comparing to the baseline : if people did not walk)
+
+loglinear_reduction_risk = function(data, dis, rr_women, rr_men, ref_women, ref_men) {
+  data[[paste0(dis, "_reduction_risk")]] <- ifelse(                        # Calculate risk reduction percentage
+    data$sexe == "Female",
+    1-(exp(log(rr_women) * data$week_time / ref_women)),                       # for women % of decrease for this disease risk
+    1-(exp(log(rr_men) * data$week_time / ref_men)) )                          # for men % of decrease for this disease risk
+  
+  if(any(data$mort_reduction_risk > (1 - 0.45), na.rm = TRUE)) {           # Cap mortality at 55%
+    data$mort_reduction_risk <- ifelse(data$mort_reduction_risk > (1 - 0.45), 1 - 0.45, data$mort_reduction_risk)
+  }
+  return(data)
+}
+
+
 
 
 
@@ -167,7 +187,7 @@ calc_HIA_replicate = function(data, dis) {
   } else {
     rr_men <- rr_women
   }    
-  data <- reduction_risk(data, dis, rr_women, rr_men, params$exp_ref_women, params$exp_ref_men)   # Reduction disease risk percentage
+  data <- reduction_risk(data, dis, rr_women, rr_men, params$ref_women, params$ref_men)   # Reduction disease risk percentage
       
   dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
   dis_reduction_risk <- paste0(dis, "_reduction_risk")
