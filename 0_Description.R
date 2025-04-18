@@ -5,6 +5,8 @@
 # GOALS : Description
   # Mean walking distance by age group and sex
   # Proportion of people by distance walked
+  # Proportion of people reporting any short (<2km) car trip
+  # Mean length of short car travel <2km 
 
 
 # Files needed :
@@ -67,7 +69,7 @@ mean_mortality_rates <- ggplot(mortality, aes(x = age_grp.x, y = mort_rate_mean,
   theme_minimal()
 
 # Export plot
-ggsave(here("output", "Plot", "plot_mean_mortality_rates.tiff"), plot = mean_mortality_rates)
+ggsave(here("output", "Plots", "plot_mean_mortality_rates.tiff"), plot = mean_mortality_rates)
 
 
 
@@ -175,7 +177,7 @@ mean_km_walkers = ggplot(mean_distance_people, aes(x = age_grp.x, y = mean_dista
 plot(mean_km_walkers)
 
   # Export plot
-ggsave(here("output", "Plot", "plot_mean_km_walkers.tiff"), plot = mean_km_walkers)
+ggsave(here("output", "Plots", "plot_mean_km_walkers.tiff"), plot = mean_km_walkers)
 
 
 
@@ -187,30 +189,53 @@ ggsave(here("output", "Plot", "plot_mean_km_walkers.tiff"), plot = mean_km_walke
 
 
 # Proportion of the French adult population reporting any short (<2km) car trip in the past day according to sex and age
-
 drivers_2km <- emp_drivers %>% 
-  filter(pond_jour != "NA") %>% 
+  filter(pond_jour != "NA", mdisttot_fin1 > 0) %>% 
   as_survey_design(ids = ident_ind,
                    weights = pond_jour) %>% 
   group_by(sexe, age_grp.x) %>% 
-  summarise(perc = 100 * survey_mean(mdisttot_fin1 <= 2, na.rm = FALSE)) %>% 
+  summarise(perc = 100 * survey_mean(mdisttot_fin1 <= 2, na.rm = TRUE)) %>% 
   rename(Sex = sexe)
 
-perc_drivers_2km 
+zq <- qnorm(1-0.05/2)
+
+perc_drivers_2km <- ggplot(drivers_2km, aes(x = age_grp.x, y = perc,
+                                            ymin = perc - zq*perc_se, ymax = perc + zq*perc_se, fill = Sex)) +
+  geom_col(width = 0.7, position = position_dodge2(0.4))+
+  geom_errorbar(position = position_dodge(0.7), width = 0.25) +
+  ylab ("% driving <2km in the past day") +
+  xlab("Age group") +
+  theme_minimal()
+plot(perc_drivers_2km)
+
+  # Export plot
+ggsave(here("output", "Plots", "plot_drivers_2km.tiff"), plot = perc_drivers_2km)
 
 
-# Mean distance driven (km) in the past day among those reporting any car trip according to sex and age
-drivers <- emp_drivers %>% 
-  filter(pond_jour !="NA", mdisttot_fin1 != 0) %>% 
+
+
+
+# Mean distance driven (km) in the past day among those reporting short car trips <2km according to sex and age
+mean_drivers_2km <- emp_drivers %>% 
+  filter(pond_jour !="NA", mdisttot_fin1 > 0, mdisttot_fin1 <= 2) %>% 
   as_survey_design(ids = ident_ind, 
                    weights = pond_jour) %>% 
   group_by(sexe, age_grp.x) %>% 
-  summarise(day_mean = survey_mean(mdisttot_fin1)) %>% 
+  summarise(day_mean = survey_mean(mdisttot_fin1, na.rm = TRUE)) %>% 
   rename(Sex = sexe)
 
 
+mean_km_drivers_2km <- ggplot(mean_drivers_2km, aes(x = age_grp.x, y = day_mean,
+                                            ymin = day_mean - zq*day_mean_se, ymax = day_mean + zq*day_mean_se, fill = Sex)) +
+  geom_col(width = 0.7, position = position_dodge2(0.4)) +
+  geom_errorbar(position = position_dodge(0.7), width = 0.25) +
+  ylab ("Mean length of short car travel <2km (km)") +
+  xlab("Age group") +
+  theme_minimal() 
+plot(mean_km_drivers)
 
-
+  # Export plot
+ggsave(here("output", "Plots", "plot_mean_drivers_2km.tiff"), plot = mean_km_drivers_2km)
 
 
 
