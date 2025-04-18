@@ -161,30 +161,6 @@ vsl <- 133000
 
 
 
-##############################################################
-#                  RATE OF DEADLY ACCIDENTS                  #
-##############################################################
-
-# Survey design ponderated by day
-ponderation_jour <- emp_walk %>% 
-  filter(pond_jour != "NA")
-
-jour <- ponderation_jour %>% 
-  as_survey_design(ids = ident_ind,
-                   weights = pond_jour,
-                   strata = c(sexe, age_grp.x),
-                   nest = TRUE)
-
-
-# Total walked distance per day in 2019
-km_total_2019 <- as.numeric(svytotal(~nbkm_walking, jour)) *365.25/7                              # Total km per year
-km_total_2019_IC <- as.numeric(confint(svytotal(~nbkm_walking, jour) *365.25/7 ))                 # Confidence interval
-
-
-# Rate of deadly accidents per km from 2019 levels
-deaths_per_km_walked <- 483 / km_total_2019                           # Number of dead walkers per km in 2019 (ONISR 2020 - Bilan 2019)
-deaths_per_km_walked
-
 
 ################################################################################################################################
 #                                              4. HEALTH IMPACT ASSESSMENT                                                     #
@@ -524,11 +500,10 @@ for(dist in dist_vec) {
   }
 }
 
+  # Export :economic value of 1 km walked per scenario
+export(unit_value_scenario, here("output", "Tables", "modalshift_unit_value.xlsx"))
 
 
-##############################################################
-#                          ACCIDENTS                         #
-##############################################################
 
 
 
