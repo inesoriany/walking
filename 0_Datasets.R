@@ -206,10 +206,9 @@ emp_drivers <- emp_subset %>%
 
 # Week time spent walking if those car distances were walked (min)
 emp_drivers <- emp_drivers %>% 
-  mutate(week_time_shift = 7*mdisttot_fin1*60 / walk_speed) %>% 
+  mutate(week_time_shift = 7*mdisttot_fin1*60 / walk_speed)
 
-# Create a unique identifier
-  mutate(ident_k = 1:nrow(emp_drivers))
+
 
 ################################################################################################################################
 #                                                    5. EXPORT EMP SUBSET                                                      #
