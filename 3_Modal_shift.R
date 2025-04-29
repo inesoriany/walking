@@ -51,10 +51,13 @@ source(here("0_Functions.R"))
 
 
 ################################################################################################################################
-#                                                3. SETTING THE CONSTANTS                                                      #
+#                                                      3. PARAMETERS                                                           #
 ################################################################################################################################
 
-# Diseases 
+# Import parameters
+source(here("0_Parameters.R"))
+
+# Diseases considered
 dis_vec = c("cc", "dem", "bc", "cvd", "diab2", "mort")
 
 # Driven distances shifted to walked (km)
@@ -63,8 +66,6 @@ dist_vec <- c(0.5, 1, 1.5, 2)
 # Percentages of car trips shifted to walking
 perc_vec <- c(0.1, 0.2, 0.3, 0.4, 0.5)
 
-# CO2 emissions per km driven
-CO2_emit <- 124                    # 124g CO2 per km
 
 
 
