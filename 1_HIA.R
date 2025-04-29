@@ -23,7 +23,7 @@ pacman :: p_load(
   rio,          # Data importation
   here,         # Localization of files 
   dplyr,        # Data management
-  survey        # Survey
+  srvyr         # Survey
 )
 
 
@@ -40,12 +40,14 @@ source(here("0_Functions.R"))
 
 
 ################################################################################################################################
-#                                                3. SETTING THE CONSTANTS                                                      #
+#                                                      3. PARAMETERS                                                           #
 ################################################################################################################################
 
+# Import parameters
+source(here("0_Parameters.R"))
+
+# Diseases considered
 dis_vec = c("cc", "dem", "bc", "cvd", "diab2", "mort")
-
-
 
 
 
