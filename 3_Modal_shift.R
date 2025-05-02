@@ -19,7 +19,8 @@
   # plot_modalshift_costs_saved.tiff : Saved medical costs depending on different scenarios of car trips shifted to walk trips
   # modalshift_tot_km_drivers.xlsx : Total km walked with IC per scenario
   # modalshift_CO2_prevented.xlsx : CO2 emissions prevented with IC per scenario
-  # modalshift_unit_value.xlsx : Economic value of 1 km walked per scenario
+  # modalshift_1km_value.xlsx : Economic value of 1 km walked per scenario
+  # modalshift_1€_km_duration.xlsx : Distance and duration to save 1€ per scenario
 
 
 ################################################################################################################################
@@ -267,7 +268,7 @@ for(dis in dis_vec) {
 #                       DISTANCE DRIVEN                      #
 ##############################################################
 
-# Total distance driven of all drivers for each scenario distance (in km)
+# Total distance driven of all drivers for each scenario distance per year (in km)
 km_driven <- data.frame()
 for(dist in dist_vec) {
   drivers_dist <- emp_drive %>% 
@@ -288,7 +289,7 @@ for(dist in dist_vec) {
 #        REPLICATIONS - DISTANCE SHIFTED & EMISSIONS         #
 ##############################################################
 
-# Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
+# Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC per year
 set.seed(123)
 N=100
 tot_table <- data.frame()
@@ -330,6 +331,8 @@ for (dist in dist_vec) {
 export(tot_table, here("output", "RDS", "modalshift_tot_km_CO2_emit.rds"))
 
 
+
+
 ##############################################################
 #                       DISTANCE SHIFTED                     #
 ##############################################################
@@ -345,6 +348,29 @@ tot_km_drivers_scenario <- tot_table %>%
 # Export : Total km walked per scenario with IC
 export(tot_km_drivers_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_tot_km_drivers.xlsx"))
  
+
+
+
+##############################################################
+#                     TIME LOST BY WALKING                   #
+##############################################################
+
+
+
+
+
+
+
+
+##############################################################
+#                LIFE TIME GAINED BY WALKING                 #
+##############################################################
+
+
+
+## Net time gained
+
+
 
 
 ##############################################################
@@ -396,32 +422,77 @@ for(dist in dist_vec) {
   for (perc in perc_vec) {
     scenario_km <- tot_km_drivers_IC %>%                                             # Set parameters
       filter(distance == dist & percentage == perc)
-    km <- scenario_km %>% 
-      pull(km)
-    km_low <- scenario_km %>% 
-      pull(km_low)
-    km_sup <- scenario_km %>% 
-      pull(km_sup)
+    km <- scenario_km [["km"]]
+    km_low <- scenario_km [["km_low"]]
+    km_sup <- scenario_km [["km_sup"]]
     
     scenario_medic_costs <- global_shift_IC %>% 
       filter(distance == dist & percentage == perc)
-    euro <- scenario_medic_costs %>% 
-      pull(medic_costs_mean)
-    euro_low <- scenario_medic_costs %>% 
-      pull(medic_costs_low)
-    euro_sup <- scenario_medic_costs %>% 
-      pull(medic_costs_sup)
+    euro <- scenario_medic_costs [["medic_costs_mean"]]
+    euro_low <- scenario_medic_costs [["medic_costs_low"]]
+    euro_sup <- scenario_medic_costs [["medic_costs_sup"]]
     
     unit <- unit_value(km, km_low, km_sup, euro, euro_low, euro_sup, N=1000)
     unit_scenario <- as.data.frame(t(quantile(unit, probs = c(0.025, 0.5, 0.975)))) %>% 
-      mutate(distance = dist, perentage = perc)
+      mutate(distance = dist, percentage = perc)
     
     unit_value_scenario <- bind_rows(unit_value_scenario, unit_scenario)
   }
 }
 
-  # Export :economic value of 1 km walked per scenario
-export(unit_value_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_unit_value.xlsx"))
+  # Export : economic value of 1 km walked per scenario
+export(unit_value_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_1km_value.xlsx"))
+
+
+
+# Calculate distance walked to save 1€ (km)
+set.seed(123)
+euro_unit_scenario <- data.frame()
+
+for(dist in dist_vec) {
+  for (perc in perc_vec) {
+    scenario_km <- tot_km_drivers_IC %>%                                             # Set parameters
+      filter(distance == dist & percentage == perc)
+    km <- scenario_km [["km"]]
+    km_low <- scenario_km [["km_low"]]
+    km_sup <- scenario_km [["km_sup"]]
+    
+    scenario_medic_costs <- global_shift_IC %>% 
+      filter(distance == dist & percentage == perc)
+    euro <- scenario_medic_costs [["medic_costs_mean"]]
+    euro_low <- scenario_medic_costs [["medic_costs_low"]]
+    euro_sup <- scenario_medic_costs [["medic_costs_sup"]]
+    
+    euro <- euro_unit(km, km_low, km_sup, euro, euro_low, euro_sup, N = 1000)
+    euro_scenario <- as.data.frame(t(quantile(euro, probs = c(0.025, 0.5, 0.975)))) %>% 
+      mutate(distance = dist, percentage = perc)
+    
+    euro_unit_scenario <- bind_rows(euro_unit_scenario, euro_scenario)
+  }
+}
+
+
+# Calculate duration walked to save 1€ (min)
+euro_unit_duration_scenario <- euro_unit_scenario %>% 
+  mutate(
+    duration_2.5 = `2.5%` * 60 / walk_speed,
+    duration_50 = `50%` * 60 / walk_speed,
+    duration_97.5 = `97.5%` * 60 / walk_speed
+  ) %>% 
+  rename(km_2.5 = "2.5%",
+         km_50 = "50%",
+         km_97.5 = "97.5%") %>% 
+  mutate(euro = 1)
+
+
+# Export : Calculate distance and duration to save 1€ per scenario
+export(euro_unit_duration_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_1€_km_duration.xlsx"))
+
+
+
+
+
+
 
 
 
