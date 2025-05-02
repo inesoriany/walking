@@ -8,6 +8,11 @@
 ## WALKING SPEED (Barban et al, 2022) ----
 walk_speed <- 4.8  # km/h
 
+## DRIVING SPEED (Kahlmeier, Götschi et al, 2017) ----
+drive_speed <- 42 # km/h 
+
+
+
 
 ##############################################################
 #                          Diseases                          #
