@@ -99,8 +99,7 @@ reduc_incidence = function (data, incidence_rate, reduction_risk, dis) {
 
 # FUNCTION daly : Calculate DALY (Disability-Adjusted Life Years) for each disease
 daly = function(data, dis){
-  data[[paste0(dis, "_daly")]] <-
-  data$years_remaining * get((paste0(dis, "_dw"))) * data[[paste0(dis, "_reduc_incidence")]]
+  data[[paste0(dis, "_daly")]] <- data$years_remaining * get((paste0(dis, "_dw"))) * data[[paste0(dis, "_reduc_incidence")]]
   return(data)
 }
 
@@ -311,6 +310,22 @@ unit_value = function(km, km_low, km_sup, euro, euro_low, euro_sup, N = 1000) {
 }
 
 
+# FUNCTION euro_value : Calculate distance walked to save 1€
+euro_unit = function(km, km_low, km_sup, euro, euro_low, euro_sup, N = 1000) {
+  km_sd1 <- (km - km_low) / qnorm(1-0.05/2)
+  km_sd2 <- (km_sup - km) / qnorm(1-0.05/2)
+  km_sd <- mean(c(km_sd1, km_sd2))
+  distr_km <- rnorm(N, km, km_sd)
+  
+  euro_sd1 <- (euro - euro_low) / qnorm(1-0.05/2)
+  euro_sd2 <- (euro_sup - euro) / qnorm(1-0.05/2)
+  euro_sd <- mean(c(euro_sd1, euro_sd2))
+  distr_euro <- rnorm(N, euro, euro_sd)
+  
+  distr_unit <- distr_km / distr_euro
+  
+  return(distr_unit)
+}
 
 
 
