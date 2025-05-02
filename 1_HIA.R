@@ -13,6 +13,7 @@
   # HIA_walking_2019.xlsx : Cases, daly, costs (medical + social) prevented by walking in 2019
   # plot_deaths_prevented.tiff : Deaths prevented per sex by walking in 2019
   # plot_YLL_prevented.tiff : YLL prevented per sex by walking in 2019 
+  # 1€_km_duration.xlsx : Distance and duration that saved 1€ in 2019
   
 
 
@@ -425,6 +426,54 @@ YLL_prevented
 
 # Export plot : YLL prevented per sex by walking in 2019 
 ggsave(here("output", "Plots", "Linear", "plot_YLL_prevented.tiff"), plot = YLL_prevented)
+
+
+
+
+##############################################################
+#                  ECONOMIC UNIT VALUE (€)                   #
+##############################################################
+
+# Total walked distance in 2019
+km_total_2019 <- as.numeric(svytotal(~nbkm_walking, jour)) *365.25/7                              # Total km per year
+km_total_2019_IC <- confint(svytotal(~nbkm_walking, jour) *365.25/7 )                 # Confidence interval
+
+
+# Setting parameters
+km_low_2019 <- km_total_2019_IC[1, 1]
+km_sup_2019 <- km_total_2019_IC[1, 2]
+
+euro_2019 <- sum(burden_IC[["tot_medic_costs"]])
+euro_low_2019 <- sum(burden_IC[["low_medic"]])
+euro_sup_2019 <- sum(burden_IC[["sup_medic"]])
+
+
+# Calculate distance walked to save 1€ (km)
+set.seed(123)
+euro_2019 <- euro_unit(km_total_2019, km_low_2019, km_sup_2019, euro_2019, euro_low_2019, euro_sup_2019, N = 1000)
+euro_unit_2019 <- as.data.frame(t(quantile(euro_2019, probs = c(0.025, 0.5, 0.975))))
+
+
+# Calculate duration walked to save 1€ (min)
+euro_unit_duration_2019<- euro_unit_2019 %>% 
+  mutate(
+    duration_2.5 = `2.5%` * 60 / walk_speed,
+    duration_50 = `50%` * 60 / walk_speed,
+    duration_97.5 = `97.5%` * 60 / walk_speed
+  ) %>% 
+  rename(km_2.5 = "2.5%",
+         km_50 = "50%",
+         km_97.5 = "97.5%") %>% 
+  mutate(euro = 1)
+
+
+
+# Export : Calculate distance and duration to save 1€ in 2019
+export(euro_unit_duration_2019, here("output", "Tables", "Linear", "1€_km_duration.xlsx"))
+
+
+
+
 
 
 
