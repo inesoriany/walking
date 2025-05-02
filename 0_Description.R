@@ -3,17 +3,22 @@
 ##############################################
 
 # GOALS : Description
-  # Mean walking distance by age group and sex
-  # Proportion of people by distance walked
-  # Proportion of people reporting any short (<2km) car trip
-  # Mean length of short car travel <2km 
+  # WALKING : 
+    # Mean walking distance by age group and sex
+    # Proportion of people by distance walked
+    # Rate of deadly accidents
+  # DRIVING :
+    # Proportion of people reporting any short (<2km) car trip
+    # Mean length of short car travel <2km 
 
 
 # Files needed :
   # EMP_walkers.xlsx
 
 
-### 1. LOAD PACKAGES ----
+################################################################################################################################
+#                                                    1. LOAD PACKAGES                                                          #
+################################################################################################################################
 
 pacman :: p_load(
   rio,          # Data importation
@@ -25,7 +30,10 @@ pacman :: p_load(
   ggplot2       # Data visualization
 )
 
-### 2. IMPORT DATA ----
+
+################################################################################################################################
+#                                                     2. IMPORT DATA                                                           #
+################################################################################################################################
 
 # EMP 2019 : distances for bike, cars, walking
 emp <- import(here("data", "emp_dataset_km_bike_and_car_and_walk_individual.csv")) 
@@ -38,7 +46,12 @@ emp_drivers <- import(here("data_clean", "EMP_drivers.xlsx"))
 
 
 
-### 3. DESCRIPTION ----
+################################################################################################################################
+################################################################################################################################
+#                                                      3. DESCRIPTION                                                          #
+################################################################################################################################
+################################################################################################################################
+
 
 # Total population
 emp_20_89 <-  emp %>% 
@@ -99,16 +112,20 @@ indiv <- emp_walkers %>%
                    nest = TRUE)
 
 
+
 ##############################################################
 #                  TOTAL WALKED DISTANCE                     #
 ##############################################################
+
+## Total walked distance in 2019
+km_total_2019 <- as.numeric(svytotal(~nbkm_walking, jour)) *365.25/7                              # Total km per year
+km_total_2019_IC <- as.numeric(confint(svytotal(~nbkm_walking, jour) *365.25/7 ))                 # Confidence interval
+
 
 ## Total walked distance per day in 2019
 km_total_day <- svytotal(~nbkm_walking, jour)                   # Total km per day
 km_total_day
 
-km_total_2019 <- as.numeric(svytotal(~nbkm_walking, jour)) *365.25/7                              # Total km per year
-km_total_2019_IC <- as.numeric(confint(svytotal(~nbkm_walking, jour) *365.25/7 ))                 # Confidence interval
 
 # Total walking distances per day, by age group
 svyby(~nbkm_walking, by = ~age_grp.x, jour, svytotal, na.rm = T)  
@@ -126,6 +143,7 @@ emp_walkers <- emp_walkers %>%
   ))%>% 
   mutate(dist_grp = as.factor(dist_grp))
 
+
 ## Plot : Proportion of people by distance walked
 proportion_km <- indiv %>% 
   group_by(dist_grp = factor(dist_grp, levels = c("0-1 km", "1-2 km", "2-5 km", "5-10 km", "10 km +"))) %>%   # Put distance range in the right order 
@@ -137,6 +155,7 @@ ggplot(proportion_km, aes(x = dist_grp, y = proportion)) +
   labs(title = "Proportion of people by distance walked",
        x = "Distance range",
        y = "Proportion")
+
 
 
 ##############################################################
@@ -181,6 +200,7 @@ ggsave(here("output", "Plots", "Description", "plot_mean_km_walkers.tiff"), plot
 
 
 
+
 ##############################################################
 #                  RATE OF DEADLY ACCIDENTS                  #
 ##############################################################
@@ -192,13 +212,40 @@ deaths_per_km_walked
 
 
 
+
+
 ################################################################################################################################
 #                                                          DRIVING                                                             #
 ################################################################################################################################
 
+##############################################################
+#                     SHORT TRIPS (<2km)                     #
+##############################################################
+
+# French adult reporting any short (<2km) car trip in the past day according to sex and age
+drivers_2km <- emp_drivers %>% 
+  filter(pond_jour != "NA", mdisttot_fin1 > 0) %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_jour) %>% 
+  group_by(sexe, age_grp.x) %>% 
+  summarise(total = survey_total(mdisttot_fin1 <= 2, na.rm = TRUE)) %>% 
+  rename(Sex = sexe)
+
+zq <- qnorm(1-0.05/2)
+
+nb_drivers_2km <- ggplot(drivers_2km, aes(x = age_grp.x, y = total,
+                                            ymin = total - zq*total_se, ymax = total + zq*total_se, fill = Sex)) +
+  geom_col(width = 0.7, position = position_dodge2(0.4))+
+  geom_errorbar(position = position_dodge(0.7), width = 0.25) +
+  ylab ("Number of drivers driving <2km in the past day") +
+  xlab("Age group") +
+  theme_minimal()
+plot(nb_drivers_2km)
+
+
 
 # Proportion of the French adult population reporting any short (<2km) car trip in the past day according to sex and age
-drivers_2km <- emp_drivers %>% 
+mean_drivers_2km <- emp_drivers %>% 
   filter(pond_jour != "NA", mdisttot_fin1 > 0) %>% 
   as_survey_design(ids = ident_ind,
                    weights = pond_jour) %>% 
@@ -208,7 +255,7 @@ drivers_2km <- emp_drivers %>%
 
 zq <- qnorm(1-0.05/2)
 
-perc_drivers_2km <- ggplot(drivers_2km, aes(x = age_grp.x, y = perc,
+perc_drivers_2km <- ggplot(mean_drivers_2km, aes(x = age_grp.x, y = perc,
                                             ymin = perc - zq*perc_se, ymax = perc + zq*perc_se, fill = Sex)) +
   geom_col(width = 0.7, position = position_dodge2(0.4))+
   geom_errorbar(position = position_dodge(0.7), width = 0.25) +
@@ -223,6 +270,9 @@ ggsave(here("output", "Plots", "Description", "plot_drivers_2km.tiff"), plot = p
 
 
 
+##############################################################
+#                MEAN DRIVEN DISTANCE (<2km)                 #
+##############################################################
 
 # Mean distance driven (km) in the past day among those reporting short car trips <2km according to sex and age
 mean_drivers_2km <- emp_drivers %>% 
