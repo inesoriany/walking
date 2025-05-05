@@ -326,7 +326,7 @@ euro_unit = function(km, km_low, km_sup, euro, euro_low, euro_sup, N = 1000) {
   
   return(distr_unit)
 }
-
+ 
 
 
 
