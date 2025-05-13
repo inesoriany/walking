@@ -10,7 +10,7 @@
   # DRIVING :
     # Proportion of people reporting any short (<2km) car trip
     # Mean length of short car travel <2km 
-
+    # Distribution of people reporting any short trips (0.5 - 1 - 1.5 - 2km) (mutually exclusive)
 
 # Files needed :
   # EMP_walkers.xlsx
@@ -61,6 +61,25 @@ pop_tot <- sum(emp_20_89$pond_indc)
 pop_tot
 
 
+##############################################################
+#                        SURVEY DESIGNS                      #
+##############################################################
+
+# Survey design ponderated by day
+jour <- emp_walkers %>% 
+  filter(pond_jour != "NA") %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_jour,
+                   strata = c(sexe, age_grp.x),
+                   nest = TRUE)
+
+# Survey design ponderated by individual
+indiv <- emp_walkers %>% 
+  filter (pond_indc != "NA") %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),
+                   nest = TRUE)
 
 
 
@@ -80,6 +99,7 @@ mean_mortality_rates <- ggplot(mortality, aes(x = age_grp.x, y = mort_rate_mean,
   labs (y = "Mean mortality rate",
         x ="Age group") +
   theme_minimal()
+plot(mean_mortality_rates)
 
 # Export plot
 ggsave(here("output", "Plots", "Description", "plot_mean_mortality_rates.tiff"), plot = mean_mortality_rates)
@@ -90,26 +110,6 @@ ggsave(here("output", "Plots", "Description", "plot_mean_mortality_rates.tiff"),
 ################################################################################################################################
 #                                                          WALKING                                                             #
 ################################################################################################################################
-
-##############################################################
-#                        SURVEY DESIGNS                      #
-##############################################################
-
-# Survey design ponderated by day
-jour <- emp_walkers %>% 
-  filter(pond_jour != "NA") %>% 
-  as_survey_design(ids = ident_ind,
-                   weights = pond_jour,
-                   strata = c(sexe, age_grp.x),
-                   nest = TRUE)
-
-# Survey design ponderated by individual (for a whole week)
-indiv <- emp_walkers %>% 
-  filter (pond_indc != "NA") %>% 
-  as_survey_design(ids = ident_ind,
-                   weights = pond_indc,
-                   strata = c(sexe, age_grp.x),
-                   nest = TRUE)
 
 
 
@@ -145,17 +145,25 @@ emp_walkers <- emp_walkers %>%
 
 
 ## Plot : Proportion of people by distance walked
-proportion_km <- indiv %>% 
+proportion_km <- emp_walkers %>% 
+  filter (pond_indc != "NA") %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),
+                   nest = TRUE) %>% 
   group_by(dist_grp = factor(dist_grp, levels = c("0-1 km", "1-2 km", "2-5 km", "5-10 km", "10 km +"))) %>%   # Put distance range in the right order 
   summarise(total_pondere = survey_total (1, na.rm = TRUE)) %>%         # Sum of ponderation of individual for each distance group
   mutate(proportion = total_pondere / sum(total_pondere))               # Proportion
 
-ggplot(proportion_km, aes(x = dist_grp, y = proportion)) +
+prop_walkers_km <- ggplot(proportion_km, aes(x = dist_grp, y = proportion)) +
   geom_col() +
   labs(title = "Proportion of people by distance walked",
        x = "Distance range",
-       y = "Proportion")
+       y = "Proportion") +
+  theme_minimal()
 
+# Export plot
+ggsave(here("output", "Plots", "Description", "plot_prop_walkers_km.tiff"), plot = prop_walkers_km)
 
 
 ##############################################################
@@ -244,6 +252,7 @@ plot(nb_drivers_2km)
 
 
 
+
 # Proportion of the French adult population reporting any short (<2km) car trip in the past day according to sex and age
 mean_drivers_2km <- emp_drivers %>% 
   filter(pond_jour != "NA", mdisttot_fin1 > 0) %>% 
@@ -270,6 +279,39 @@ ggsave(here("output", "Plots", "Description", "plot_drivers_2km.tiff"), plot = p
 
 
 
+# Distribution of people reporting any short trips (mutually exclusive)
+short_trips <- emp_drivers %>%
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc) %>% 
+  mutate(class_dist = case_when(
+    mdisttot_fin1 <= 0.5                           ~ "≤0.5km",                                 
+    mdisttot_fin1 > 0.5 & mdisttot_fin1 <= 1       ~ "0.5–1km",  
+    mdisttot_fin1 > 1   & mdisttot_fin1 <= 1.5     ~ "1–1.5km",   
+    mdisttot_fin1 > 1.5 & mdisttot_fin1 <= 2       ~ "1.5–2km",   
+  )) %>%
+  group_by(class_dist) %>%
+  summarise(tot_drivers = survey_total(mdisttot_fin1))
+
+
+  # Plot : Distribution of people reporting any short trips (mutually exclusive)
+zq <- qnorm(1-0.05/2)
+short_trips_2km <- ggplot(short_trips, aes(x = class_dist, y = tot_drivers,
+                                               ymin = tot_drivers - zq*tot_drivers_se, ymax = tot_drivers + zq*tot_drivers_se)) +
+  geom_col(width = 0.9) +
+  geom_errorbar(position = position_dodge(0.7), width = 0.25) +
+  ylab ("Number of drivers") +
+  xlab("Distance (km)") +
+  theme_minimal() 
+plot(short_trips_2km)
+
+ggsave(here("output", "Plots", "Description", "plot_drivers_shorttrips.tiff"), plot = short_trips_2km)
+
+
+
+
+
+
+
 ##############################################################
 #                MEAN DRIVEN DISTANCE (<2km)                 #
 ##############################################################
@@ -291,7 +333,7 @@ mean_km_drivers_2km <- ggplot(mean_drivers_2km, aes(x = age_grp.x, y = day_mean,
   ylab ("Mean length of short car travel <2km (km)") +
   xlab("Age group") +
   theme_minimal() 
-plot(mean_km_drivers)
+plot(mean_km_drivers_2km)
 
   # Export plot
 ggsave(here("output", "Plots", "Description", "plot_mean_drivers_2km.tiff"), plot = mean_km_drivers_2km)
