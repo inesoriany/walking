@@ -52,7 +52,8 @@ insee <- import(here("data", "INSEE_2019.RDS"))
 ################################################################################################################################
 #                                                    3. SETTING THE CONSTANTS                                                  #
 ################################################################################################################################
-walk_speed <- 4.8  # km/h
+# Import parameters
+source(here("0_Parameters.R"))
 
 
 
@@ -67,6 +68,7 @@ emp_subset <- emp %>%
     sexe,
     age,
     quartile_rev,
+    tuu2017_res,
     pond_indc,
     pond_jour,
     nbkm_walking_lower,
@@ -134,10 +136,10 @@ emp_subset <- emp_subset %>%
 
 
 # Calculate incidence rates
-dis <- c("cc_incidence", "dem_incidence", "bc_incidence", "cvd_incidence", "diab2_incidence")
+dis_incidence <- c("cc_incidence", "dem_incidence", "bc_incidence", "cvd_incidence", "diab2_incidence")
 
 for (i in 1:nrow(emp_subset)) {
-  for(j in dis) {
+  for(j in dis_incidence) {
     if (!is.na(emp_subset[i, "pop_age_sex"])) {
       emp_subset[i, paste0(j, "_rate")] <- emp_subset[i, j] / emp_subset[i, "pop_age_sex"]
     } else {
@@ -149,7 +151,7 @@ for (i in 1:nrow(emp_subset)) {
 
 # Add life-expectancy for each sex
 for (i in 1:nrow(emp_subset)) {
-  emp_subset[i, "life_exp"] = ifelse (
+  emp_subset[i, "life_exp"] <- ifelse (
     emp_subset$sexe[i]== "Female", 
     85.99324,                            # Life expectancy for women = 85.99324
     79.59503                             # Life expectancy for men = 79.59503
@@ -158,9 +160,9 @@ for (i in 1:nrow(emp_subset)) {
 
 # Add the years of life remaining, potentially affected by diseases or premature death
 for (i in 1:nrow(emp_subset)) {
-  emp_subset[i,"years_remaining"] = ifelse(
-    emp_subset$life_exp[i]-emp_subset$age[i] >=0,
-    emp_subset$life_exp[i]-emp_subset$age[i],
+  emp_subset[i,"years_remaining"] <- ifelse(
+    emp_subset[i, "life_exp"]-emp_subset[i, "age"] >=0,
+    emp_subset[i, "life_exp"]-emp_subset[i, "age"],
     0                                                   # No negatives for individuals above life expectancy
     )
 }
@@ -204,9 +206,19 @@ emp_drivers <- emp_subset %>%
          -week_time_upper)
 
 
+# Associate drive speed
+emp_drivers <- emp_drivers %>%
+  mutate(drive_speed = case_when(
+    tuu2017_res %in% 2:7 ~ urban_car_speed,
+    tuu2017_res == 8     ~ paris_car_speed,
+    TRUE                 ~ rural_car_speed
+    )
+  )
+
+
 # Week time spent walking if those car distances were walked (min)
 emp_drivers <- emp_drivers %>% 
-  mutate(week_time_shift = 7*mdisttot_fin1*60 / walk_speed)
+  mutate(week_time_shift = 7*mdisttot_fin1*60 / drive_speed)
 
 
 
