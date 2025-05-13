@@ -436,7 +436,7 @@ ggsave(here("output", "Plots", "Linear", "plot_YLL_prevented.tiff"), plot = YLL_
 
 # Total walked distance in 2019
 km_total_2019 <- as.numeric(svytotal(~nbkm_walking, jour)) *365.25/7                              # Total km per year
-km_total_2019_IC <- confint(svytotal(~nbkm_walking, jour) *365.25/7 )                 # Confidence interval
+km_total_2019_IC <- confint(svytotal(~nbkm_walking, jour) *365.25/7 )                             # Confidence interval
 
 
 # Setting parameters
