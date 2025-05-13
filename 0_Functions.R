@@ -120,8 +120,7 @@ daly_IC = function(data, dis, bound) {
 ## MEDICAL COSTS ----
 # FUNCTION medic_costs : Calculate the medical costs associated with the reduced disease incidence for each individual
 medic_costs = function(data, dis) {
-  data [[paste0(dis, "_medic_costs")]] <-
-  get(paste0(dis, "_cost")) * data[[paste0(dis, "_reduc_incidence")]]
+  data [[paste0(dis, "_medic_costs")]] <- get(paste0(dis, "_cost")) * data[[paste0(dis, "_reduc_incidence")]]
   return(data)
 }
 
