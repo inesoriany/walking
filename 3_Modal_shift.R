@@ -9,16 +9,14 @@
   # 0_Functions.R
 
   # HIA_modal_shift_100replicate.rds : HIA outcomes of 100 replications for each scenario of modal shifts
-  # modalshift_tot_km_CO2_emit.rds : Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
-  # modalshift_tot_km_drivers.xlsx : Total km walked with IC per scenario
-  
+  # modalshift_tot_km.rds : Total km walked with IC per scenario
+  # modalshift_drive_time.rds : Drive time per scenario
 
 
 # Files outputted :
   # plot_modalshift_cases_prevented.tiff : Total of prevented cases depending on different scenarios of car trips shifted to walk trips
   # plot_modalshift_costs_saved.tiff : Saved medical costs depending on different scenarios of car trips shifted to walk trips
-  # modalshift_tot_km_drivers.xlsx : Total km walked with IC per scenario
-  # modalshift_CO2_prevented.xlsx : CO2 emissions prevented with IC per scenario
+  # modalshift_tot_km_CO2_emit.xlsx : Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
   # modalshift_1km_value.xlsx : Economic value of 1 km walked per scenario
   # modalshift_1€_km_duration.xlsx : Distance and duration to save 1€ per scenario
 
@@ -30,9 +28,11 @@ pacman :: p_load(
   rio,          # Data importation
   here,         # Localization of files 
   dplyr,        # Data management
-  survey,       # Survey
+  srvyr,        # Survey
   tidyr,        # Table - Data organization, extraction
-  tidyverse     # Data manipulation and visualization
+  tidyverse,    # Data manipulation and visualization
+  ggplot2,      # Plotting
+  viridis       # Color palette
 )
 
 
@@ -86,13 +86,15 @@ for(dist in dist_vec){
   for (perc in perc_vec){
     print(paste0("Share = ", perc))
     
-    N=100                                                                               # N random samples of drivers
+    N=100                                                                               # N random samples of drivers of different shares
     burden_run <- data.frame()
     for(i in 1:N) {
       print(paste0("Run = ", i))
       sample_drivers <- drivers_dist %>% 
         slice_sample(prop = perc) %>% 
-        rename(week_time = week_time_shift)
+        rename(week_time = week_time_shift) %>% 
+        mutate(run = i, percentage = perc, distance = dist)
+      
       
       burden_dis <- data.frame()
       for(dis in dis_vec){
@@ -112,6 +114,8 @@ for(dist in dist_vec){
 
 # Export HIA outcomes of 100 replications for each scenario of modal shifts
 export(burden_tot, here("output", "RDS", "HIA_modal_shift_100replicate.rds"))
+
+
 
 
 
@@ -168,6 +172,8 @@ for (dis in dis_vec) {
   group_by(distance, percentage) %>% 
   summarise(tot_cases = sum(tot_cases),
             tot_cases_se = sum(tot_cases_se),
+            tot_daly = sum(tot_daly),
+            tot_daly_se = sum(tot_daly_se),
             tot_medic_costs = sum(tot_medic_costs) / 1e6,
             tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
   assign(paste0(dis, "_shift"), dis_shift)
@@ -180,6 +186,8 @@ morbidity_shift <- burden_tot %>%
   group_by(distance, percentage) %>% 
   summarise(tot_cases = sum(tot_cases),
             tot_cases_se = sum(tot_cases_se),
+            tot_daly = sum(tot_daly),
+            tot_daly_se = sum(tot_daly_se),
             tot_medic_costs = sum(tot_medic_costs) / 1e6,
             tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
 
@@ -194,25 +202,49 @@ morbidity_shift <- burden_tot %>%
 ##############################################################
 # All cases prevented per scenario
 global_shift_cases <- ggplot(data = global_shift) +
-  geom_tile(aes(x = distance, y = percentage, fill = tot_cases)) +
-  scale_fill_gradient(low = "brown2", 
-                      high = "royalblue") +
+  geom_tile(aes(x = distance, y = percentage*100, fill = tot_cases),
+            color = "white") +
+  scale_fill_viridis() +
   labs(x = "Distances of car trips shifted (km)",
-       y = "Share shifted", 
-       title = "Total of prevented cases depending on different scenarios of car trips shifted to walk trips",
-       fill = "Number of all prevented cases")
+       y = "Share shifted (%)", 
+       title = "Prevented morbi-mortality cases depending on different scenarios of car trips shifted to walk trips",
+       fill = "Number of cases") +
+  theme(legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key.height = grid::unit(1, "cm"),
+        legend.key.width = grid::unit(0.6, "cm"),
+        
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(vjust = 0.2),
+        axis.ticks = element_line(linewidth = 0.4),
+        axis.title = element_text(size = 12, face = "bold"),
+        
+        plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
+  theme_minimal()
 global_shift_cases
 
 
 # Medical costs saved per scenario
 global_shift_costs <- ggplot(data = global_shift) +
-  geom_tile(aes(x = distance, y = percentage, fill = tot_medic_costs)) +
-  scale_fill_gradient(low = "brown2", 
-                      high = "royalblue") +
+  geom_tile(aes(x = distance, y = percentage*100, fill = tot_medic_costs),
+            color = "white") +
+  scale_fill_viridis() +
   labs(x = "Distances of car trips shifted (km)",
-       y = "Share shifted", 
+       y = "Share shifted (%)", 
        title = "Saved medical costs depending on different scenarios of car trips shifted to walk trips",
-       fill = "Saved medical costs (in million €)")
+       fill = "Saved medical costs (in million €)")+
+  theme(legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key.height = grid::unit(1, "cm"),
+        legend.key.width = grid::unit(0.6, "cm"),
+        
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(vjust = 0.2),
+        axis.ticks = element_line(linewidth = 0.4),
+        axis.title = element_text(size = 12, face = "bold"),
+        
+        plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
+  theme_minimal()
 global_shift_costs
 
 
@@ -230,13 +262,24 @@ ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_costs_s
 # Disease cases prevented per scenario
 for(dis in dis_vec) {
   dis_shift_cases <- ggplot(data = get(paste0(dis, "_shift"))) +
-    geom_tile(aes(x = distance, y = percentage, fill = tot_cases)) +
-    scale_fill_gradient(low = "brown2", 
-                        high = "royalblue") +
-    labs(x = "Distances of car trips shifted",
-         y = "Share shifted", 
-         title = paste0("Total of ", dis, " prevented depending on different scenarios of car trips shifted to walk trips"),
-         fill = "Number of all prevented cases")
+    geom_tile(aes(x = distance, y = percentage*100, fill = tot_cases)) +
+    scale_fill_viridis() +
+    labs(x = "Distance of car trips shifted",
+         y = "Share shifted (%)", 
+         title = paste0("Prevented ", dis, " cases depending on different scenarios of car trips shifted to walk trips"),
+         fill = "Number of cases") +
+    theme(legend.title = element_text(size = 12, face = "bold"),
+          legend.text = element_text(size = 10),
+          legend.key.height = grid::unit(1, "cm"),
+          legend.key.width = grid::unit(0.6, "cm"),
+          
+          axis.text.x = element_text(size = 12),
+          axis.text.y = element_text(vjust = 0.2),
+          axis.ticks = element_line(linewidth = 0.4),
+          axis.title = element_text(size = 12, face = "bold"),
+          
+          plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
+    theme_minimal()
   assign(paste0(dis, "_shift_cases"), dis_shift_cases)
   print(get(paste0(dis, "_shift_cases")))
 }
@@ -245,13 +288,12 @@ for(dis in dis_vec) {
 # Medical costs saved for each disease per scenario
 for(dis in dis_vec) {
   dis_shift_cases <- ggplot(data = get(paste0(dis, "_shift"))) +
-    geom_tile(aes(x = distance, y = percentage, fill = tot_medic_costs)) +
-    scale_fill_gradient(low = "brown2", 
-                        high = "royalblue") +
+    geom_tile(aes(x = distance, y = percentage*100, fill = tot_medic_costs)) +
+    scale_fill_viridis() +
     labs(x = "Distances of car trips shifted",
-         y = "Share shifted", 
-         title = paste0("Total of ", dis, " prevented depending on different scenarios of car trips shifted to walk trips"),
-         fill = "Number of all prevented cases")
+         y = "Share shifted (%)", 
+         title = paste0("Saved medical costs for ", dis, " depending on different scenarios of car trips shifted to walk trips"),
+         fill = "Saved medical costs (in million €)")
   assign(paste0(dis, "_shift_cases"), dis_shift_cases)
   print(get(paste0(dis, "_shift_cases")))
 }
@@ -263,6 +305,7 @@ for(dis in dis_vec) {
 ################################################################################################################################
 #                                                       6. DESCRIPTION                                                         #
 ################################################################################################################################
+
 
 ##############################################################
 #                       DISTANCE DRIVEN                      #
@@ -285,6 +328,8 @@ for(dist in dist_vec) {
 
 
 
+
+
 ##############################################################
 #        REPLICATIONS - DISTANCE SHIFTED & EMISSIONS         #
 ##############################################################
@@ -292,7 +337,8 @@ for(dist in dist_vec) {
 # Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC per year
 set.seed(123)
 N=100
-tot_table <- data.frame()
+tot_km_CO2 <- data.frame()
+tot_km_scenario <- data.frame()
 
 for (dist in dist_vec) {
   print(paste0("Distance = ", dist))
@@ -302,10 +348,11 @@ for (dist in dist_vec) {
   for(perc in perc_vec) {
     print(paste0("Share = ", perc))
     
-    tot_km_drivers <- data.frame()                                                    # Reset the dataframe 
+    tot_km_drivers <- data.frame()                                                    # 1 dataframe per scenario
+
     for(i in 1:N) {
       print(i)
-      tot_sample <- drivers_dist %>% 
+      tot_sample <- drivers_dist %>%                                                  # Distances shifted for a year for 1 scenario
         filter(pond_jour != "NA") %>% 
         slice_sample(prop = perc) %>% 
         as_survey_design(ids= ident_ind, weights = pond_jour) %>% 
@@ -313,41 +360,52 @@ for (dist in dist_vec) {
         
       tot_km_drivers <- bind_rows(tot_km_drivers, tot_sample)
     }
+    
     IC_km <- calc_replicate_IC(tot_km_drivers, "tot_km") / 1e6                                       # in million km
     tot_km_IC <- paste0(round(IC_km["50%"], 3), " (", round(IC_km["2.5%"], 3), " - ", round(IC_km["97.5%"], 3), ")")
+    
+    IC_km_Rubin <- calc_IC_Rubin (tot_km_drivers, "tot_km") / 1e6                                    # Rubin's rule
+    tot_km_IC_Rubin <- paste0(round(IC_km_Rubin[2], 3), " (", round(IC_km_Rubin[1], 3), " - ", round(IC_km_Rubin[3], 3), ")")
+    
     
     IC_mt <- IC_km * 1e6 * CO2_emit / (1e6*1e6)                                                      # CO2 emissions (in Mt CO2)
     tot_mt_IC <- paste0(round(IC_mt["50%"], 3), " (", round(IC_mt["2.5%"], 3), " - ", round(IC_mt["97.5%"], 3), ")")
     
-    tot_table <- bind_rows(tot_table, data.frame(
+    IC_mt_Rubin <- IC_km_Rubin * 1e6 * CO2_emit / (1e6*1e6)                                          # Rubin's rule
+    tot_mt_IC_Rubin <- paste0(round(IC_mt_Rubin[2], 3), " (", round(IC_mt_Rubin[1], 3), " - ", round(IC_mt_Rubin[3], 3), ")")
+    
+    
+    tot_km_scenario <- bind_rows(tot_km_scenario, data.frame(
+      distance = dist,
+      percentage = perc,
+      km = IC_km[["50%"]],
+      km_low = IC_km[["2.5%"]],
+      km_sup = IC_km[["97.5%"]], 
+      Rubin_km = IC_km_Rubin[2],
+      Rubin_km_low = IC_km_Rubin[1],
+      Rubin_km_sup = IC_km_Rubin[3]))
+    
+    tot_km_CO2 <- bind_rows(tot_km_CO2, data.frame(
       distance = dist,
       percentage = paste0(perc*100, "%"),
       total_millions_km = tot_km_IC,
-      CO2_emissions_Mt = tot_mt_IC))
+      Rubin_total_millions_km = tot_km_IC_Rubin,
+      CO2_emissions_Mt = tot_mt_IC,
+      Rubin_CO2_emissions_Mt = tot_mt_IC_Rubin))
+    
   }
 }
 
+
+# Export replications - Total km walked per scenario
+export(tot_km_scenario, here("output", "RDS", "modalshift_tot_km.rds"))
+
 # Export replications - Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
-export(tot_table, here("output", "RDS", "modalshift_tot_km_CO2_emit.rds"))
+export(tot_km_CO2, here("output", "Tables", "Linear", "Modal shift", "modalshift_tot_km_CO2_emit.xlsx"))
 
 
 
 
-##############################################################
-#                       DISTANCE SHIFTED                     #
-##############################################################
-
-# Import replications
-tot_table <- import(here("output", "RDS", "modalshift_tot_km_CO2_emit.rds"))
-
-# Contingency table gathering total km walked with IC per scenario
-tot_km_drivers_scenario <- tot_table %>% 
-  select(-CO2_emissions_Mt) %>% 
-  pivot_wider(names_from = percentage, values_from = total_millions_km)
-
-# Export : Total km walked per scenario with IC
-export(tot_km_drivers_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_tot_km_drivers.xlsx"))
- 
 
 
 
@@ -355,8 +413,78 @@ export(tot_km_drivers_scenario, here("output", "Tables", "Linear", "Modal shift"
 #                     TIME LOST BY WALKING                   #
 ##############################################################
 
+# Calculate time spent walking per scenario
+walk_time_scenario <- data.frame(
+  distance = tot_km_scenario[["distance"]],
+  percentage = tot_km_scenario[["percentage"]],
+  walk_time = tot_km_scenario[["km"]] / walk_speed,                                    # in hours
+  walk_time_low = tot_km_scenario[["km_low"]] / walk_speed,
+  walk_time_sup = tot_km_scenario[["km_sup"]] / walk_speed,
+  Rubin_walk_time = tot_km_scenario[["Rubin_km"]] / walk_speed,
+  Rubin_walk_time_low = tot_km_scenario[["Rubin_km_low"]] / walk_speed,
+  Rubin_walk_time_sup = tot_km_scenario[["Rubin_km_sup"]] / walk_speed)
 
 
+
+
+## Calculate time spent driving per scenario ----
+set.seed(123)
+N=100
+
+drive_time_scenario <- data.frame()
+
+for (dist in dist_vec) {
+  print(paste0("Distance = ", dist))
+  drivers_dist <- emp_drive %>% 
+    filter(!is.na(mdisttot_fin1) & mdisttot_fin1 <= dist)                              # Select the drivers under this distance
+  
+  for(perc in perc_vec) {
+    print(paste0("Share = ", perc))
+    
+    tot_time_drivers <- data.frame()                                                   # 1 dataframe per scenario
+    for(i in 1:N) {
+      print(i)
+      time_sample <- drivers_dist %>%                                                  # Time driven for a year (hours)
+        filter(pond_jour != "NA") %>% 
+        slice_sample(prop = perc) %>% 
+        as_survey_design(ids= ident_ind, weights = pond_jour) %>% 
+        summarise(tot_drive_time = survey_total(week_time_shift, na.rm = T)*365.25/(7*7*60))
+      
+      tot_time_drivers <- bind_rows(tot_time_drivers, time_sample)
+    }
+    
+    IC_time <- calc_replicate_IC(tot_time_drivers, "tot_drive_time")                                             
+    
+    IC_time_Rubin <- calc_IC_Rubin (tot_time_drivers, "tot_drive_time")                                          # Rubin's rule
+    
+    drive_time_scenario <- bind_rows(drive_time_scenario, data.frame(                                            # in hours
+      distance = dist, 
+      percentage = perc,
+      drive_time = IC_time[["50%"]],
+      drive_time_low = IC_time[["2.5%"]],
+      drive_time_sup = IC_time[["97.5%"]],
+      Rubin_drive_time = IC_time_Rubin[2],
+      Rubin_drive_time_low = IC_time_Rubin[1],
+      Rubin_drive_time_sup = IC_time_Rubin[3]
+    ))
+  }
+}
+  # Export : time spent driving per scenario
+export(drive_time_scenario, here("output", "RDS", "modalshift_drive_time.rds"))
+
+
+
+  # Load time spent driving per scenario ----
+drive_time_scenario <-  import(here("output", "RDS", "modalshift_drive_time.rds"))
+
+# Calculate time lost by walking 
+time_scenario <- left_join(walk_time_scenario, drive_time_scenario, by = c("distance", "percentage")) %>% 
+  mutate(time_lost = walk_time - drive_time,
+         time_lost_low = walk_time_low - drive_time_low,
+         time_lost_sup = walk_time_sup - drive_time_sup,
+         Rubin_time_lost = Rubin_walk_time - Rubin_drive_time,
+         Rubin_time_lost_low = Rubin_walk_time_low - Rubin_drive_time_low,
+         Rubin_time_lost_sup = Rubin_walk_time_sup - Rubin_drive_time_sup)
 
 
 
@@ -365,28 +493,12 @@ export(tot_km_drivers_scenario, here("output", "Tables", "Linear", "Modal shift"
 ##############################################################
 #                LIFE TIME GAINED BY WALKING                 #
 ##############################################################
-
-
+# in days
+time_scenario <- time_scenario %>% 
+  mutate(time_saved = )
 
 ## Net time gained
 
-
-
-
-##############################################################
-#                          EMISSIONS                         #
-##############################################################
-
-# Import replications
-tot_table <- import(here("output", "RDS", "modalshift_tot_km_CO2_emit.rds"))
-
-# Contingency table gathering CO2 emissions prevented with IC per scenario
-CO2_emissions_scenario <- tot_table %>% 
-  select(-total_millions_km) %>% 
-  pivot_wider(names_from = percentage, values_from = CO2_emissions_Mt)
-
-# Export : CO2 emissions prevented with IC per scenario
-export(CO2_emissions_scenario, here("output", "Tables", "Linear", "Modal shift", "modalshift_CO2_prevented.xlsx"))
 
 
 
@@ -395,23 +507,6 @@ export(CO2_emissions_scenario, here("output", "Tables", "Linear", "Modal shift",
 ##############################################################
 #                  ECONOMIC UNIT VALUE (€)                   #
 ##############################################################
-
-# Import : Total km walked per scenario with IC
-tot_km_drivers_scenario <- import(here("output", "Tables", "Linear", "Modal shift", "modalshift_tot_km_drivers.xlsx"))
-
-
-# Extract km, km_low and km_sup for each scenario
-tot_km_drivers_IC <- data.frame()
-for(perc in perc_vec){
-  tot_km_perc_IC <- tot_km_drivers_scenario %>% 
-    extract(paste0(perc*100, "%"), into = c("km", "km_low", "km_sup"),
-            regex = "([0-9.]+) \\(([0-9.]+) - ([0-9.]+)\\)",
-            convert = TRUE) %>%                                            # Convert in numeric
-    mutate(percentage = perc)
-  
-  tot_km_drivers_IC <- bind_rows(tot_km_drivers_IC, tot_km_perc_IC) %>% 
-    select(distance, percentage, km, km_low, km_sup)
-}
 
 
 # Calculate economic value of 1 km walked per scenario
