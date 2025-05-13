@@ -9,8 +9,7 @@
 walk_speed <- 4.8  # km/h
 
 ## DRIVING SPEED (Kahlmeier, Götschi et al, 2017) ----
-average_car_speed <- 42   # km/h 
-paris_car_speed <- 31 
+paris_car_speed <- 31  # km/h 
 urban_car_speed <-  32
 rural_car_speed <- 60 
 
