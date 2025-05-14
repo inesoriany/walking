@@ -234,6 +234,7 @@ burden_prevented_replicate = function(data, dis, N, group){                     
 calc_replicate_IC = function(data, outcome){
   vec = c()
   se_name = paste0(outcome, "_se")
+  
   for (i in 1:nrow(data)){
     sam = rnorm(n=200, mean = as.numeric(data[i,outcome]), sd = as.numeric(data[i,se_name]) ) # Generation of samples : uncertainty estimation
     vec = c(vec, sam)
@@ -277,6 +278,11 @@ HIA_burden_IC = function(data, dis_vec, outcome_vec, IC_func ) {
       
       HIA_dis <- HIA_dis %>%                                             # All outcomes for 1 disease
         mutate(!!sym(out) := paste0(round(IC[2], 3), " (", round(IC[1], 3), " - ", round(IC[3], 3), ")"))    # Add a column per outcome
+      
+      HIA_dis <- HIA_dis %>%                                             # All outcomes for 1 disease
+        mutate(!!sym(out) := round(IC[2], 3),
+               !!sym(paste0(out, "_low")) := round(IC[1], 3),
+               !!sym(paste0(out, "_low")) := round(IC[3], 3))
     }
     HIA_burden <- bind_rows(HIA_burden, HIA_dis)                         # Gather all outcomes for all diseases
   }
@@ -287,7 +293,7 @@ HIA_burden_IC = function(data, dis_vec, outcome_vec, IC_func ) {
 
 ################################################################################################################################
 ################################################################################################################################
-#                                                        3. MODAL SHIFT                                                        #
+#                                                  3. ECONOMIC UNIT VALUE                                                      #
 ################################################################################################################################
 ################################################################################################################################
 
