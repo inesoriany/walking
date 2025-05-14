@@ -16,6 +16,10 @@
 # Files outputted :
   # plot_modalshift_cases_prevented.tiff : Total of prevented cases depending on different scenarios of car trips shifted to walk trips
   # plot_modalshift_costs_saved.tiff : Saved medical costs depending on different scenarios of car trips shifted to walk trips
+  # plot_modalshift_soc_costs_saved.tiff : : Saved intangible costs depending on different scenarios of car trips shifted to walk trips
+  # plot_modalshift_morbidity_prevented.tiff : Chronic diseases prevented
+  # plot_modalshift_mortality_prevented.tiff : Premature deaths prevented
+  # plot_modalshift_morbi_mortality_prevented.tiff : Combined morbi-mortality graph
   # modalshift_tot_km_CO2_emit.xlsx : Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
   # modalshift_1km_value.xlsx : Economic value of 1 km walked per scenario
   # modalshift_1€_km_duration.xlsx : Distance and duration to save 1€ per scenario
@@ -32,6 +36,7 @@ pacman :: p_load(
   tidyr,        # Table - Data organization, extraction
   tidyverse,    # Data manipulation and visualization
   ggplot2,      # Plotting
+  patchwork,    # Plots combining
   viridis       # Color palette
 )
 
@@ -134,8 +139,10 @@ global_shift <- burden_tot %>%
             tot_cases_se = sum(tot_cases_se),
             tot_daly = sum(tot_daly),
             tot_daly_se = sum(tot_daly_se),
-            tot_medic_costs = sum(tot_medic_costs) /1e6,                                # in million €
-            tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
+            tot_medic_costs = sum(tot_medic_costs) * 1e-6,                                # in million €
+            tot_medic_costs_se = sum(tot_medic_costs_se) * 1e-6,
+            tot_soc_costs = sum(tot_daly * vsl * 1e-6),
+            tot_soc_costs_se = sum(tot_daly_se * vsl * 1e-6))
 
   # IC per scenario
 set.seed(123)
@@ -162,6 +169,9 @@ for (dist in dist_vec) {
     global_shift_IC <- bind_rows(global_shift_IC, scenario_IC)
   }
 }
+
+  # OTHER VISUALIZATION
+
 
 
 
@@ -226,13 +236,13 @@ global_shift_cases
 
 # Medical costs saved per scenario
 global_shift_costs <- ggplot(data = global_shift) +
-  geom_tile(aes(x = distance, y = percentage*100, fill = tot_medic_costs),
+  geom_tile(aes(x = distance, y = percentage*100, fill = tot_medic_costs/1e3),                    # in billion €
             color = "white") +
   scale_fill_viridis() +
   labs(x = "Distances of car trips shifted (km)",
        y = "Share shifted (%)", 
-       title = "Saved medical costs depending on different scenarios of car trips shifted to walk trips",
-       fill = "Saved medical costs (in million €)")+
+       title = "Direct medical (tangible) costs savings depending on different scenarios of car trips shifted to walk trips",
+       fill = "Costs (in billion €)")+
   theme(legend.title = element_text(size = 12, face = "bold"),
         legend.text = element_text(size = 10),
         legend.key.height = grid::unit(1, "cm"),
@@ -248,55 +258,140 @@ global_shift_costs <- ggplot(data = global_shift) +
 global_shift_costs
 
 
+# Intangible costs saved per scenario
+global_shift_soc_costs <- ggplot(data = global_shift) +
+  geom_tile(aes(x = distance, y = percentage*100, fill = tot_soc_costs/1e3),                    # in billion €
+            color = "white") +
+  scale_fill_viridis() +
+  labs(x = "Distances of car trips shifted (km)",
+       y = "Share shifted (%)", 
+       title = "Intangible costs savings depending on different scenarios of car trips shifted to walk trips",
+       fill = "Costs (in billion €)")+
+  theme(legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key.height = grid::unit(1, "cm"),
+        legend.key.width = grid::unit(0.6, "cm"),
+        
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(vjust = 0.2),
+        axis.ticks = element_line(linewidth = 0.4),
+        axis.title = element_text(size = 12, face = "bold"),
+        
+        plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
+  theme_minimal()
+global_shift_soc_costs
+
+
 # Export plots
 ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_cases_prevented.tiff"), plot = global_shift_cases)
 ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_costs_saved.tiff"),plot = global_shift_costs)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_soc_costs_saved.tiff"),plot = global_shift_soc_costs)
 
 
 
 
 ##############################################################
-#                 EACH DISEASE + MORTALITY                   #
+#                        MORBIDITY                           #
 ##############################################################
 
-# Disease cases prevented per scenario
-for(dis in dis_vec) {
-  dis_shift_cases <- ggplot(data = get(paste0(dis, "_shift"))) +
-    geom_tile(aes(x = distance, y = percentage*100, fill = tot_cases)) +
-    scale_fill_viridis() +
-    labs(x = "Distance of car trips shifted",
-         y = "Share shifted (%)", 
-         title = paste0("Prevented ", dis, " cases depending on different scenarios of car trips shifted to walk trips"),
-         fill = "Number of cases") +
-    theme(legend.title = element_text(size = 12, face = "bold"),
-          legend.text = element_text(size = 10),
-          legend.key.height = grid::unit(1, "cm"),
-          legend.key.width = grid::unit(0.6, "cm"),
-          
-          axis.text.x = element_text(size = 12),
-          axis.text.y = element_text(vjust = 0.2),
-          axis.ticks = element_line(linewidth = 0.4),
-          axis.title = element_text(size = 12, face = "bold"),
-          
-          plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
-    theme_minimal()
-  assign(paste0(dis, "_shift_cases"), dis_shift_cases)
-  print(get(paste0(dis, "_shift_cases")))
-}
+# Chronic diseases prevented per scenario
+morbidity_shift_cases <- ggplot(data = morbidity_shift) +
+  geom_tile(aes(x = distance, y = percentage*100, fill = tot_cases)) +
+  scale_fill_viridis() +
+  labs(x = "Distances of car trips shifted (km)",
+       y = "Share shifted (%)", 
+       title = "Chronic diseases prevented",
+       fill = "Number of cases") +
+  theme(legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key.height = grid::unit(1, "cm"),
+        legend.key.width = grid::unit(0.6, "cm"),
+        
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(vjust = 0.2),
+        axis.ticks = element_line(linewidth = 0.4),
+        axis.title = element_text(size = 12, face = "bold"),
+        
+        plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
+  theme_minimal()
+morbidity_shift_cases
 
 
-# Medical costs saved for each disease per scenario
-for(dis in dis_vec) {
-  dis_shift_cases <- ggplot(data = get(paste0(dis, "_shift"))) +
-    geom_tile(aes(x = distance, y = percentage*100, fill = tot_medic_costs)) +
-    scale_fill_viridis() +
-    labs(x = "Distances of car trips shifted",
-         y = "Share shifted (%)", 
-         title = paste0("Saved medical costs for ", dis, " depending on different scenarios of car trips shifted to walk trips"),
-         fill = "Saved medical costs (in million €)")
-  assign(paste0(dis, "_shift_cases"), dis_shift_cases)
-  print(get(paste0(dis, "_shift_cases")))
-}
+# Export plot
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_morbidity_prevented.tiff"), plot = morbidity_shift_cases)
+
+
+
+##############################################################
+#                        MORTALITY                           #
+##############################################################
+
+# Premature deaths prevented per scenario
+mortality_shift_cases <- ggplot(data = mort_shift) +
+  geom_tile(aes(x = distance, y = percentage*100, fill = tot_cases)) +
+  scale_fill_viridis() +
+  labs(x = "Distances of car trips shifted (km)",
+       y = "Share shifted (%)", 
+       title = "Premature deaths prevented",
+       fill = "Number of cases") +
+  theme(legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key.height = grid::unit(1, "cm"),
+        legend.key.width = grid::unit(0.6, "cm"),
+        
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(vjust = 0.2),
+        axis.ticks = element_line(linewidth = 0.4),
+        axis.title = element_text(size = 12, face = "bold"),
+        
+        plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
+  theme_minimal()
+mortality_shift_cases
+
+
+# Export plot
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_mortality_prevented.tiff"), plot = mortality_shift_cases)
+
+
+##############################################################
+#                     MORBI-MORTALITY                        #
+##############################################################
+
+# List of the morbidity and mortality graphs
+morbi_mortality_shift_graph <- list(morbidity_shift_cases, mortality_shift_cases)
+
+# Theme for the common graph
+common_theme <- theme(
+  axis.title = element_text(size = 10, face = "bold"),
+  strip.text = element_text(size = 8),
+  axis.text.y = element_text(size = 9),
+  legend.key.height = grid::unit(1, "cm"),
+  legend.key.width = grid::unit(0.6, "cm")
+)
+
+
+# Apply the common theme to each graph
+morbi_mortality_shift_graph <- lapply(morbi_mortality_shift_graph, 
+                                      function(p) p + theme_minimal() + common_theme +
+                                        scale_fill_gradient2(limits = c(0, max(morbidity_shift[["tot_cases"]])),
+                                                             low = "#440154FF",
+                                                             mid = "#1F968BFF",
+                                                             high = "#FDE725FF",
+                                                             midpoint = mean(c(0, max(morbidity_shift[["tot_cases"]]))) ) +
+                                        theme(legend.position = "none")
+                                      )
+
+# Make the legend appear once
+morbi_mortality_shift_graph[[2]] <- morbi_mortality_shift_graph[[2]] + theme(legend.position = "right")
+
+# Combine the graphs into one single figure
+morbi_mortality_shift_cases <- wrap_plots(morbi_mortality_shift_graph, ncol = 2)
+
+morbi_mortality_shift_cases
+
+
+  # Export plot
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_morbi_mortality_prevented.tiff"), plot = morbi_mortality_shift_cases)
 
 
 
@@ -410,7 +505,7 @@ export(tot_km_CO2, here("output", "Tables", "Linear", "Modal shift", "modalshift
 
 
 ##############################################################
-#                     TIME LOST BY WALKING                   #
+#                     TIME LOST BY WALKING                   #  TO BE CONTINUED
 ##############################################################
 
 # Calculate time spent walking per scenario
@@ -427,7 +522,7 @@ walk_time_scenario <- data.frame(
 
 
 
-## Calculate time spent driving per scenario ----
+## Calculate time spent driving per scenario ---- TO BE CONTINUED
 set.seed(123)
 N=100
 
@@ -515,7 +610,7 @@ unit_value_scenario <- data.frame()
 
 for(dist in dist_vec) {
   for (perc in perc_vec) {
-    scenario_km <- tot_km_drivers_IC %>%                                             # Set parameters
+    scenario_km <- tot_km_scenario %>%                                                 # Set parameters
       filter(distance == dist & percentage == perc)
     km <- scenario_km [["km"]]
     km_low <- scenario_km [["km_low"]]
@@ -546,7 +641,7 @@ euro_unit_scenario <- data.frame()
 
 for(dist in dist_vec) {
   for (perc in perc_vec) {
-    scenario_km <- tot_km_drivers_IC %>%                                             # Set parameters
+    scenario_km <- tot_km_scenario %>%                                             # Set parameters
       filter(distance == dist & percentage == perc)
     km <- scenario_km [["km"]]
     km_low <- scenario_km [["km_low"]]
@@ -570,9 +665,9 @@ for(dist in dist_vec) {
 # Calculate duration walked to save 1€ (min)
 euro_unit_duration_scenario <- euro_unit_scenario %>% 
   mutate(
-    duration_2.5 = `2.5%` * 60 / walk_speed,
-    duration_50 = `50%` * 60 / walk_speed,
-    duration_97.5 = `97.5%` * 60 / walk_speed
+    min_2.5 = `2.5%` * 60 / walk_speed,
+    min_50 = `50%` * 60 / walk_speed,
+    min_97.5 = `97.5%` * 60 / walk_speed
   ) %>% 
   rename(km_2.5 = "2.5%",
          km_50 = "50%",
