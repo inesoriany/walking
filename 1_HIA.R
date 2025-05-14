@@ -206,7 +206,7 @@ for(dis in dis_vec) {
 burden_IC <- burden %>% 
   mutate(low_cases = burden_lb[,1], sup_cases = burden_ub[,1],
          low_daly = burden_lb[,3], sup_daly = burden_ub[,3],
-         low_medic = burden_lb[,5], sup_medic = burden_ub[,5])
+         low_medic_costs = burden_lb[,5], sup_medic_costs = burden_ub[,5])
 
 
 
@@ -218,9 +218,17 @@ burden_IC <- burden %>%
 ## SOCIAL COSTS (intangible)----
 # Add social costs
 burden_IC <- burden_IC %>% 
-  mutate(social_cost = tot_daly*vsl,
-         low_social_cost = low_daly*vsl,
-         sup_social_cost = sup_daly*vsl)
+  mutate(tot_soc_costs = tot_daly*vsl,
+         low_soc_costs = low_daly*vsl,
+         sup_soc_costs = sup_daly*vsl)
+
+# Reorganize columns
+burden_IC <- burden_IC %>% 
+  select(disease,
+         tot_cases, tot_cases_se, low_cases, sup_cases,
+         tot_daly, tot_daly_se, low_daly, sup_daly,
+         tot_medic_costs, tot_medic_costs_se, low_medic_costs, sup_medic_costs,
+         tot_soc_costs, low_soc_costs, sup_soc_costs)
 
 
 
@@ -433,49 +441,109 @@ ggsave(here("output", "Plots", "Linear", "plot_YLL_prevented.tiff"), plot = YLL_
 ##############################################################
 #                  ECONOMIC UNIT VALUE (€)                   #
 ##############################################################
+# Survey design ponderated by day
+jour <- emp_walkers %>% 
+  filter(pond_jour != "NA") %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_jour,
+                   strata = c(sexe, age_grp.x),
+                   nest = TRUE)
 
 # Total walked distance in 2019
 km_total_2019 <- as.numeric(svytotal(~nbkm_walking, jour)) *365.25/7                              # Total km per year
 km_total_2019_IC <- confint(svytotal(~nbkm_walking, jour) *365.25/7 )                             # Confidence interval
 
 
-# Setting parameters
+# Setting parameters 
 km_low_2019 <- km_total_2019_IC[1, 1]
 km_sup_2019 <- km_total_2019_IC[1, 2]
 
-euro_2019 <- sum(burden_IC[["tot_medic_costs"]])
-euro_low_2019 <- sum(burden_IC[["low_medic"]])
-euro_sup_2019 <- sum(burden_IC[["sup_medic"]])
+euro <- sum(burden_IC[["tot_medic_costs"]])
+euro_low <- sum(burden_IC[["low_medic_costs"]])
+euro_sup <- sum(burden_IC[["sup_medic_costs"]])
+
+soc_euro <- sum(burden_IC[["tot_soc_costs"]])
+soc_euro_low <- sum(burden_IC[["low_soc_costs"]])
+soc_euro_sup <- sum(burden_IC[["sup_soc_costs"]])
 
 
-# Calculate distance walked to save 1€ (km)
+
+##################################
+########   VALUE OF 1km   ########
+
+## SOCIAL COSTS ----
+
+# Calculate economic value of 1 km walked (intangible costs)
 set.seed(123)
-euro_2019 <- euro_unit(km_total_2019, km_low_2019, km_sup_2019, euro_2019, euro_low_2019, euro_sup_2019, N = 1000)
+unit_soc_2019 <- unit_value(km_total_2019, km_low_2019, km_sup_2019, soc_euro, soc_euro_low, soc_euro_sup, N=1000)
+unit_soc_value_2019 <- as.data.frame(t(quantile(unit_soc_2019, probs = c(0.025, 0.5, 0.975)))) %>% 
+  rename(soc_cost_2.5 = "2.5%",
+         soc_cost_50 = "50%",
+         soc_cost_97.5 = "97.5%") %>% 
+  mutate(km = 1)
+
+    
+# Export : economic value of 1 km walked per scenario
+export(unit_soc_value_2019, here("output", "Tables", "Linear", "1km_soc_value.xlsx"))
+
+
+
+
+##################################
+#########     SAVE 1€    #########
+
+## MEDICAL COSTS ----
+
+# Calculate distance walked to save 1€ of medical costs (km)
+set.seed(123)
+euro_2019 <- euro_unit(km_total_2019, km_low_2019, km_sup_2019, euro, euro_low, euro_sup, N = 1000)
 euro_unit_2019 <- as.data.frame(t(quantile(euro_2019, probs = c(0.025, 0.5, 0.975))))
 
 
-# Calculate duration walked to save 1€ (min)
+# Calculate duration walked to save 1€ of medical costs (min)
 euro_unit_duration_2019<- euro_unit_2019 %>% 
   mutate(
-    duration_2.5 = `2.5%` * 60 / walk_speed,
-    duration_50 = `50%` * 60 / walk_speed,
-    duration_97.5 = `97.5%` * 60 / walk_speed
+    min_2.5 = `2.5%` * 60 / walk_speed,
+    min_50 = `50%` * 60 / walk_speed,
+    min_97.5 = `97.5%` * 60 / walk_speed
   ) %>% 
   rename(km_2.5 = "2.5%",
          km_50 = "50%",
          km_97.5 = "97.5%") %>% 
-  mutate(euro = 1)
+  mutate(medic_costs = 1)
 
 
 
-# Export : Calculate distance and duration to save 1€ in 2019
+# Export : Calculate distance and duration to save 1€ of medical costs in 2019
 export(euro_unit_duration_2019, here("output", "Tables", "Linear", "1€_km_duration.xlsx"))
 
 
 
 
+## SOCIAL COSTS ----
+
+# Calculate distance walked to save 1€ of intangible costs (km)
+set.seed(123)
+soc_euro_2019 <- euro_unit(km_total_2019, km_low_2019, km_sup_2019, soc_euro, soc_euro_low, soc_euro_sup, N = 1000)
+soc_euro_unit_2019 <- as.data.frame(t(quantile(soc_euro_2019, probs = c(0.025, 0.5, 0.975))))
 
 
+# Calculate duration walked to save 1€ of intangible costs (min)
+soc_euro_unit_duration_2019<- soc_euro_unit_2019 %>% 
+  mutate(
+    min_2.5 = `2.5%` * 60 / walk_speed,
+    min_50 = `50%` * 60 / walk_speed,
+    min_97.5 = `97.5%` * 60 / walk_speed
+  ) %>% 
+  rename(km_2.5 = "2.5%",
+         km_50 = "50%",
+         km_97.5 = "97.5%") %>% 
+  mutate(soc_costs = 1)
+
+
+
+# Export : Calculate distance and duration to save 1€ of medical costs in 2019
+export(soc_euro_unit_duration_2019, here("output", "Tables", "Linear", "soc_1€_km_duration.xlsx"))
 
 
 
