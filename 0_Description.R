@@ -111,7 +111,8 @@ ggsave(here("output", "Plots", "Description", "plot_mean_mortality_rates.tiff"),
 #                                                          WALKING                                                             #
 ################################################################################################################################
 
-
+# Mean age of walkers
+svymean(~age, )
 
 ##############################################################
 #                  TOTAL WALKED DISTANCE                     #
