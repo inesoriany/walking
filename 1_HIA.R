@@ -295,6 +295,9 @@ burden_sex_IC <- burden_sex_age_IC %>%
             low_medic_costs = sum(low_medic_costs, na.rm = T),
             sup_medic_costs = sum(sup_medic_costs, na.rm = T))
 
+  # Export HIA per sex : total of prevented cases, DALY and saved costs per disease
+export(burden_sex_IC, here("output", "Tables", "Linear", "HIA_sex_walking_2019.xlsx"))
+
 
 # Plot : Cases prevented by walking in 2019 according to sex 
 cases_prevented <- ggplot(burden_sex_IC, aes(x = disease, y = tot_cases, ymin = low_cases, ymax = sup_cases, fill = Sex)) +
@@ -307,7 +310,7 @@ cases_prevented <- ggplot(burden_sex_IC, aes(x = disease, y = tot_cases, ymin = 
   theme_minimal()
 cases_prevented
 
-  #Export plot
+  # Export plot
 ggsave(here("output", "Plots", "Linear", "plot_cases_prevented.tiff"), plot = cases_prevented)
 
 
@@ -390,6 +393,34 @@ prevented_cases_rev
 ################################################################################################################################
 #                                                       4. DESCRIPTION                                                         #
 ################################################################################################################################
+
+##############################################################
+#              DALY prevented by walking in 2019             #
+##############################################################
+
+# Global
+sum(burden_IC[["tot_daly"]])
+sum(burden_IC[["low_daly"]])
+sum(burden_IC[["sup_daly"]])
+
+# YLD
+morbidity_burden_IC <- burden_IC %>% 
+  filter(disease != "mort")
+
+sum(morbidity_burden_IC[["tot_daly"]])
+sum(morbidity_burden_IC[["low_daly"]])
+sum(morbidity_burden_IC[["sup_daly"]])
+
+sum(morbidity_burden_IC[["tot_daly"]]) / sum(burden_IC[["tot_daly"]])                 # Proportion of contribution
+
+
+# YLL 
+mortality_burden_IC <- burden_IC %>% 
+  filter(disease == "mort")
+
+mortality_burden_IC[["tot_daly"]] / sum(burden_IC[["tot_daly"]])                      # Proportion of contribution
+
+
 
 ##############################################################
 #        Premature deaths prevented by walking in 2019       #
