@@ -277,12 +277,9 @@ HIA_burden_IC = function(data, dis_vec, outcome_vec, IC_func ) {
       IC <- IC_func(data_dis, out)                                       # Calculate IC for the corresponding outcome with the chosen method
       
       HIA_dis <- HIA_dis %>%                                             # All outcomes for 1 disease
-        mutate(!!sym(out) := paste0(round(IC[2], 3), " (", round(IC[1], 3), " - ", round(IC[3], 3), ")"))    # Add a column per outcome
-      
-      HIA_dis <- HIA_dis %>%                                             # All outcomes for 1 disease
         mutate(!!sym(out) := round(IC[2], 3),
                !!sym(paste0(out, "_low")) := round(IC[1], 3),
-               !!sym(paste0(out, "_low")) := round(IC[3], 3))
+               !!sym(paste0(out, "_sup")) := round(IC[3], 3))
     }
     HIA_burden <- bind_rows(HIA_burden, HIA_dis)                         # Gather all outcomes for all diseases
   }
