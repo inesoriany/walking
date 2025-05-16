@@ -242,7 +242,7 @@ HIA_global <- HIA_burden_IC(burden_global, "all", outcome_vec, calc_replicate_IC
   # OTHER VISUALIZATION
 HIA_all_disease <- data.frame(disease = HIA_global[["disease"]])
 for (out in outcome_vec){
-  HIA_all_disease_Rubin <- HIA_all_disease_Rubin %>% 
+  HIA_all_disease <- HIA_all_disease %>% 
     mutate(!!sym(out) := paste0(HIA_global[[paste0(out)]], " (", HIA_global[[paste0(out, "_low")]], " - ", HIA_global[[paste0(out, "_sup")]], " )"))
 }
 
