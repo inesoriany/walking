@@ -14,9 +14,11 @@
 
 
 # Files outputted :
-  # plot_modalshift_cases_prevented.tiff : Total of prevented cases depending on different scenarios of car trips shifted to walk trips
-  # plot_modalshift_costs_saved.tiff : Saved medical costs depending on different scenarios of car trips shifted to walk trips
-  # plot_modalshift_soc_costs_saved.tiff : : Saved intangible costs depending on different scenarios of car trips shifted to walk trips
+  # HIA_modal_shift_100replicate.xlsx : HIA for each scenario of modal shift
+  # plot_modalshift_cases_prevented.tiff : Total of prevented cases depending on different scenarios of modal shift
+  # plot_modalshift_daly_prevented.tiff : DALY prevented
+  # plot_modalshift_costs_saved.tiff : Saved medical costs
+  # plot_modalshift_soc_costs_saved.tiff : : Saved intangible costs
   # plot_modalshift_morbidity_prevented.tiff : Chronic diseases prevented
   # plot_modalshift_mortality_prevented.tiff : Premature deaths prevented
   # plot_modalshift_morbi_mortality_prevented.tiff : Combined morbi-mortality graph
@@ -144,6 +146,9 @@ global_shift <- burden_tot %>%
             tot_soc_costs = sum(tot_daly * vsl * 1e-6),
             tot_soc_costs_se = sum(tot_daly_se * vsl * 1e-6))
 
+  # Export HIA for each scenario
+export(global_shift, here("output", "Tables", "Linear", "Modal shift", "HIA_modal_shift_100replicate.xlsx"))
+
   # IC per scenario
 set.seed(123)
 global_shift_IC <- data.frame()
@@ -169,8 +174,6 @@ for (dist in dist_vec) {
     global_shift_IC <- bind_rows(global_shift_IC, scenario_IC)
   }
 }
-
-  # OTHER VISUALIZATION
 
 
 
@@ -234,6 +237,32 @@ global_shift_cases <- ggplot(data = global_shift) +
 global_shift_cases
 
 
+# DALY prevented per scenario
+
+global_shift_daly <- ggplot(data = global_shift) +
+  geom_tile(aes(x = distance, y = percentage*100, fill = tot_daly),
+            color = "white") +
+  scale_fill_viridis() +
+  labs(x = "Distances of car trips shifted (km)",
+       y = "Share shifted (%)", 
+       title = "DALY prevented depending on different scenarios of car trips shifted to walk trips",
+       fill = "Number of years") +
+  theme(legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key.height = grid::unit(1, "cm"),
+        legend.key.width = grid::unit(0.6, "cm"),
+        
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(vjust = 0.2),
+        axis.ticks = element_line(linewidth = 0.4),
+        axis.title = element_text(size = 12, face = "bold"),
+        
+        plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
+  theme_minimal()
+global_shift_daly
+
+
+
 # Medical costs saved per scenario
 global_shift_costs <- ggplot(data = global_shift) +
   geom_tile(aes(x = distance, y = percentage*100, fill = tot_medic_costs/1e3),                    # in billion €
@@ -284,6 +313,7 @@ global_shift_soc_costs
 
 # Export plots
 ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_cases_prevented.tiff"), plot = global_shift_cases)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_daly_prevented.tiff"), plot = global_shift_daly)
 ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_costs_saved.tiff"),plot = global_shift_costs)
 ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_soc_costs_saved.tiff"),plot = global_shift_soc_costs)
 
@@ -373,7 +403,7 @@ common_theme <- theme(
 # Apply the common theme to each graph
 morbi_mortality_shift_graph <- lapply(morbi_mortality_shift_graph, 
                                       function(p) p + theme_minimal() + common_theme +
-                                        scale_fill_gradient2(limits = c(0, max(morbidity_shift[["tot_cases"]])),
+                                        scale_fill_gradient2(limits = c(0, max(morbidity_shift[["tot_cases"]])),          # Caliber a common scale
                                                              low = "#440154FF",
                                                              mid = "#1F968BFF",
                                                              high = "#FDE725FF",
