@@ -456,7 +456,7 @@ for(dist in dist_vec) {
 
 
 ##############################################################
-#        REPLICATIONS - DISTANCE SHIFTED & EMISSIONS         #
+#      REPLICATIONS - DISTANCE SHIFTED & CO2 EMISSIONS       #
 ##############################################################
 
 # Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC per year
@@ -493,10 +493,10 @@ for (dist in dist_vec) {
     tot_km_IC_Rubin <- paste0(round(IC_km_Rubin[2], 3), " (", round(IC_km_Rubin[1], 3), " - ", round(IC_km_Rubin[3], 3), ")")
     
     
-    IC_mt <- IC_km * 1e6 * CO2_emit / (1e6*1e6)                                                      # CO2 emissions (in Mt CO2)
+    IC_mt <- IC_km * CO2_emit *1e-6                                                                  # CO2 emissions (in Mt CO2)
     tot_mt_IC <- paste0(round(IC_mt["50%"], 3), " (", round(IC_mt["2.5%"], 3), " - ", round(IC_mt["97.5%"], 3), ")")
     
-    IC_mt_Rubin <- IC_km_Rubin * 1e6 * CO2_emit / (1e6*1e6)                                          # Rubin's rule
+    IC_mt_Rubin <- IC_km_Rubin* CO2_emit * 1e-6                                                      # Rubin's rule
     tot_mt_IC_Rubin <- paste0(round(IC_mt_Rubin[2], 3), " (", round(IC_mt_Rubin[1], 3), " - ", round(IC_mt_Rubin[3], 3), ")")
     
     
