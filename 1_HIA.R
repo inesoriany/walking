@@ -24,7 +24,8 @@ pacman :: p_load(
   rio,          # Data importation
   here,         # Localization of files 
   dplyr,        # Data management
-  srvyr         # Survey
+  srvyr,        # Survey
+  survey
 )
 
 
@@ -473,7 +474,7 @@ ggsave(here("output", "Plots", "Linear", "plot_YLL_prevented.tiff"), plot = YLL_
 #                  ECONOMIC UNIT VALUE (€)                   #
 ##############################################################
 # Survey design ponderated by day
-jour <- emp_walkers %>% 
+jour <- emp_walk %>% 
   filter(pond_jour != "NA") %>% 
   as_survey_design(ids = ident_ind,
                    weights = pond_jour,
@@ -575,6 +576,25 @@ soc_euro_unit_duration_2019<- soc_euro_unit_2019 %>%
 
 # Export : Calculate distance and duration to save 1€ of medical costs in 2019
 export(soc_euro_unit_duration_2019, here("output", "Tables", "Linear", "soc_1€_km_duration.xlsx"))
+
+
+
+
+##############################################################
+#               CO2 emissions prevented in 2019              #
+##############################################################
+
+# If those trips were driven
+
+mt_2019 <- km_total_2019 * CO2_emit * 1e-12                    # CO2 emissions (in Mt CO2)
+mt_2019_low <- km_low_2019 * CO2_emit * 1e-12
+mt_2019_sup <- km_sup_2019 * CO2_emit * 1e-12
+
+mt_2019
+mt_2019_low
+mt_2019_sup
+
+
 
 
 
