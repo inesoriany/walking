@@ -201,7 +201,7 @@ calc_HIA_replicate = function(data, dis) {
 
 
 
-# FUNCTION burden_prevented_replicate : Total of prevented cases, DALY and saved costs, for each disease based on RR random values issued
+# FUNCTION burden_prevented_replicate : Total of prevented cases, DALY and saved costs, for each disease based on RR random values issued (Monte-Carlo)
 burden_prevented_replicate = function(data, dis, N, group){                             # group : Column name (or names) used to group the results (e.g., "age", "sex")
   burden_dis <- data.frame()
   
@@ -229,7 +229,6 @@ burden_prevented_replicate = function(data, dis, N, group){                     
 
 
 # FUNCTION calc_replicate_IC : Calculate interval of confidence by combining replications obtained with generated RR samples to generate a posterior distribution for each outcome
-  # Monte-Carlo
 #set.seed()
 calc_replicate_IC = function(data, outcome){
   vec = c()
