@@ -44,6 +44,7 @@ emp_walkers <- import(here("data_clean", "EMP_walkers.xlsx"))
 # EMP 2019 subset for walkers
 emp_drivers <- import(here("data_clean", "EMP_drivers.xlsx"))
 
+source(here("0_Parameters.R"))
 
 
 ################################################################################################################################
@@ -90,9 +91,10 @@ indiv <- emp_walkers %>%
 ## Mortality rates distribution per sex and age group
 mortality <- indiv %>% 
   group_by(sexe, age_grp.x) %>% 
-  summarise(mort_rate_mean = survey_mean(mort_rate, proportion = TRUE, na.rm = TRUE))
+  summarise(mort_rate_mean = survey_mean(mort_rate, proportion = TRUE, na.rm = TRUE)) %>% 
+  rename(sex = sexe)
 
-mean_mortality_rates <- ggplot(mortality, aes(x = age_grp.x, y = mort_rate_mean, fill = sexe)) +
+mean_mortality_rates <- ggplot(mortality, aes(x = age_grp.x, y = mort_rate_mean, fill = sex)) +
   geom_bar(width = 0.7, position = position_dodge2(0.7), stat = "identity") +
   scale_fill_manual(values = c("Female" = "darkorange1",
                                "Male" = "chartreuse4")) +
@@ -102,7 +104,7 @@ mean_mortality_rates <- ggplot(mortality, aes(x = age_grp.x, y = mort_rate_mean,
 plot(mean_mortality_rates)
 
 # Export plot
-ggsave(here("output", "Plots", "Description", "plot_mean_mortality_rates.tiff"), plot = mean_mortality_rates)
+ggsave(here("output", "Plots", "Description", "plot_mean_mortality_rates.png"), plot = mean_mortality_rates)
 
 
 
@@ -120,10 +122,15 @@ ggsave(here("output", "Plots", "Description", "plot_mean_mortality_rates.tiff"),
 km_total_2019 <- as.numeric(svytotal(~nbkm_walking, jour)) *365.25/7                              # Total km per year
 km_total_2019_IC <- as.numeric(confint(svytotal(~nbkm_walking, jour) *365.25/7 ))                 # Confidence interval
 
+km_total_2019 * 1e-9 # billion km
+km_total_2019_IC * 1e-9
+
 
 ## Total walked distance per day in 2019
 km_total_day <- svytotal(~nbkm_walking, jour)                   # Total km per day
-km_total_day
+km_total_day_IC <- as.numeric(confint(km_total_day))
+km_total_day *1e-6
+km_total_day_IC * 1e-6
 
 
 # Total walking distances per day, by age group
@@ -162,7 +169,11 @@ prop_walkers_km <- ggplot(proportion_km, aes(x = dist_grp, y = proportion)) +
   theme_minimal()
 
 # Export plot
-ggsave(here("output", "Plots", "Description", "plot_prop_walkers_km.tiff"), plot = prop_walkers_km)
+ggsave(here("output", "Plots", "Description", "plot_prop_walkers_km.png"), plot = prop_walkers_km)
+
+
+# Proportion of distances walked by women
+
 
 
 ##############################################################
@@ -175,9 +186,13 @@ km_mean
 km_mean_IC <- confint(km_mean)
 km_mean_IC
 
+# In exposure time (min)
+km_mean * 60 / walk_speed
+
 
 # Mean walking distances per day, by age group
 svyby(~nbkm_walking, by = ~age_grp.x, jour, svymean, na.rm = T)
+
 
 # Mean walking distances per day, per age group and per sex
 mean_distance_people <- svyby(~nbkm_walking, by = ~sexe + age_grp.x, jour, svymean, na.rm = T)
@@ -188,22 +203,24 @@ mean_distance_people <- svyby(~nbkm_walking, by = ~sexe + age_grp.x, jour, svyme
 ## Plot : Mean walking distance by age group and sex
 mean_distance_people <- jour %>% 
   group_by(sexe , age_grp.x) %>% 
-  summarise(mean_distance = survey_mean(nbkm_walking, na.rm = TRUE))
+  summarise(mean_distance = survey_mean(nbkm_walking, na.rm = TRUE)) %>% 
+  rename(sex = sexe)
 
 zq <- qnorm(1-0.05/2)      # Level of confidence at 95%
 
 mean_km_walkers = ggplot(mean_distance_people, aes(x = age_grp.x, y = mean_distance,
                                               ymin = mean_distance - zq*mean_distance_se, ymax = mean_distance + zq*mean_distance_se,
-                                              fill = sexe)) +
+                                              fill = sex)) +
   geom_col(width = 0.7, position = position_dodge2(0.4)) +
   geom_errorbar(position = position_dodge(.7), width = .25) + 
-  labs(title = "Mean distance walked by age group and sex",
-       x = "Age group",
+  scale_fill_manual(values = c("Female" = "darkorange1",
+                               "Male" = "chartreuse4")) +
+  labs(x = "Age group",
          y = "Mean distance walked (km per day)")
 plot(mean_km_walkers)
 
   # Export plot
-ggsave(here("output", "Plots", "Description", "plot_mean_km_walkers.tiff"), plot = mean_km_walkers)
+ggsave(here("output", "Plots", "Description", "plot_mean_km_walkers.png"), plot = mean_km_walkers)
 
 
 
@@ -273,7 +290,7 @@ perc_drivers_2km <- ggplot(mean_drivers_2km, aes(x = age_grp.x, y = perc,
 plot(perc_drivers_2km)
 
   # Export plot
-ggsave(here("output", "Plots", "Description", "plot_drivers_2km.tiff"), plot = perc_drivers_2km)
+ggsave(here("output", "Plots", "Description", "plot_drivers_2km.png"), plot = perc_drivers_2km)
 
 
 
@@ -303,7 +320,7 @@ short_trips_2km <- ggplot(short_trips, aes(x = class_dist, y = tot_drivers,
   theme_minimal() 
 plot(short_trips_2km)
 
-ggsave(here("output", "Plots", "Description", "plot_drivers_shorttrips.tiff"), plot = short_trips_2km)
+ggsave(here("output", "Plots", "Description", "plot_drivers_shorttrips.png"), plot = short_trips_2km)
 
 
 
@@ -335,6 +352,6 @@ mean_km_drivers_2km <- ggplot(mean_drivers_2km, aes(x = age_grp.x, y = day_mean,
 plot(mean_km_drivers_2km)
 
   # Export plot
-ggsave(here("output", "Plots", "Description", "plot_mean_drivers_2km.tiff"), plot = mean_km_drivers_2km)
+ggsave(here("output", "Plots", "Description", "plot_mean_drivers_2km.png"), plot = mean_km_drivers_2km)
 
 
