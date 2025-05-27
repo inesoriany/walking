@@ -15,13 +15,13 @@
 
 # Files outputted :
   # HIA_modal_shift_100replicate.xlsx : HIA for each scenario of modal shift
-  # plot_modalshift_cases_prevented.tiff : Total of prevented cases depending on different scenarios of modal shift
-  # plot_modalshift_daly_prevented.tiff : DALY prevented
-  # plot_modalshift_costs_saved.tiff : Saved medical costs
-  # plot_modalshift_soc_costs_saved.tiff : : Saved intangible costs
-  # plot_modalshift_morbidity_prevented.tiff : Chronic diseases prevented
-  # plot_modalshift_mortality_prevented.tiff : Premature deaths prevented
-  # plot_modalshift_morbi_mortality_prevented.tiff : Combined morbi-mortality graph
+  # plot_modalshift_cases_prevented.png : Total of prevented cases depending on different scenarios of modal shift
+  # plot_modalshift_daly_prevented.png : DALY prevented
+  # plot_modalshift_costs_saved.png : Saved medical costs
+  # plot_modalshift_soc_costs_saved.png : : Saved intangible costs
+  # plot_modalshift_morbidity_prevented.png : Chronic diseases prevented
+  # plot_modalshift_mortality_prevented.png : Premature deaths prevented
+  # plot_modalshift_morbi_mortality_prevented.png : Combined morbi-mortality graph
   # modalshift_tot_km_CO2_emit.xlsx : Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
   # modalshift_1km_value.xlsx : Economic value of 1 km walked per scenario
   # modalshift_1€_km_duration.xlsx : Distance and duration to save 1€ per scenario
@@ -312,10 +312,10 @@ global_shift_soc_costs
 
 
 # Export plots
-ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_cases_prevented.tiff"), plot = global_shift_cases)
-ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_daly_prevented.tiff"), plot = global_shift_daly)
-ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_costs_saved.tiff"),plot = global_shift_costs)
-ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_soc_costs_saved.tiff"),plot = global_shift_soc_costs)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_cases_prevented.png"), plot = global_shift_cases)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_daly_prevented.png"), plot = global_shift_daly)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_costs_saved.png"),plot = global_shift_costs)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_soc_costs_saved.png"),plot = global_shift_soc_costs)
 
 
 
@@ -348,7 +348,7 @@ morbidity_shift_cases
 
 
 # Export plot
-ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_morbidity_prevented.tiff"), plot = morbidity_shift_cases)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_morbidity_prevented.png"), plot = morbidity_shift_cases)
 
 
 
@@ -380,7 +380,7 @@ mortality_shift_cases
 
 
 # Export plot
-ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_mortality_prevented.tiff"), plot = mortality_shift_cases)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_mortality_prevented.png"), plot = mortality_shift_cases)
 
 
 ##############################################################
@@ -421,7 +421,7 @@ morbi_mortality_shift_cases
 
 
   # Export plot
-ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_morbi_mortality_prevented.tiff"), plot = morbi_mortality_shift_cases)
+ggsave(here("output", "Plots", "Linear", "Modal shift", "plot_modalshift_morbi_mortality_prevented.png"), plot = morbi_mortality_shift_cases)
 
 
 
