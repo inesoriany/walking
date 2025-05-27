@@ -134,7 +134,7 @@ burden_prevented = function(data, dis, group){
   
   dis_burden <- data %>% 
     group_by(across(all_of(group))) %>% 
-    summarise(tot_cases = survey_total(!!sym(paste0(dis, "_reduc_incidence")), na.rm = TRUE),     # Total of prevented cases per disease
+    summarise(tot_cases = survey_total(!!sym(paste0(dis, "_reduc_incidence")), na.rm = TRUE),       # Total of prevented cases per disease
                 tot_daly = survey_total(!!sym(paste0(dis, "_daly")), na.rm = TRUE),                 # Total of prevented DALY per disease
                 tot_medic_costs = survey_total(!!sym(paste0(dis, "_medic_costs")), na.rm = TRUE)    # Total of saved medical costs per disease
       ) %>%             
