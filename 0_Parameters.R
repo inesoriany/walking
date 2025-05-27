@@ -23,7 +23,7 @@ rural_car_speed <- 60
 
 ## RELATIVE RISKS ----
 
-# Colon cancer (Rojas-Rueda et al, 2013)
+# Colon cancer (Harris et al., 2009)
 ref_cc_m <- 168*30.1/11.25                                  # Disease reference volume men (in min)
 rr_cc_men_lb <-.67                                          # Disease relative risk for men (upper bound)
 rr_cc_men <- .80                                            # Disease relative risk for men
@@ -33,13 +33,13 @@ rr_cc_women_lb <- .76                                       # Disease relative r
 rr_cc_women <-  .86                                         # Disease relative risk for women 
 rr_cc_women_ub <-.98                                        # Disease relative risk for women (lower bound)
 
-# Dementia (Rojas-Rueda et al, 2013)
+# Dementia (Hamer & Chida, 2009)
 ref_dem = ref_dem_m = ref_dem_w <- 168*33/11.25             # same for men and women
 rr_dem_lb = rr_dem_men_lb =rr_dem_women_lb <-.6 
 rr_dem = rr_dem_men = rr_dem_women <- .72
 rr_dem_ub = rr_dem_men_ub =rr_dem_women_ub<-.86 
 
-# Breast cancer (Rojas-Rueda et al, 2013)
+# Breast cancer (Monninkhof et al., 2007)
 ref_bc_w <- 60 
 rr_bc_women_lb <- .92 
 rr_bc_women <- .94
@@ -50,13 +50,13 @@ rr_bc_men_ub <-NA
 rr_bc_men <- NA
 rr_bc_men_lb <- NA
 
-# Cardiovascular disease (Rojas-Rueda et al, 2013)
+# Cardiovascular disease (Hamer & Chida, 2008)
 ref_cvd = ref_cvd_m = ref_cvd_w <- 180                       # 3h per week of physical activity of moderate intensity
 rr_cvd_lb = rr_cvd_men_lb =rr_cvd_women_lb<-.79
 rr_cvd = rr_cvd_men = rr_cvd_women<- .84
 rr_cvd_ub = rr_cvd_men_ub =rr_cvd_women_ub<-.90
 
-# type 2 diabetes
+# type 2 diabetes (Jeon et al., 2007)
 ref_diab2 = ref_diab2_m =ref_diab2_w <- 168*10/11.25
 rr_diab2_lb = rr_diab2_men_lb =rr_diab2_women_lb<-.75
 rr_diab2 = rr_diab2_men = rr_diab2_women <- .83
