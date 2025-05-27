@@ -9,11 +9,13 @@
 
 
 # Files outputted :
-  # plot_prevented_cases.tiff : Diseases cases prevented per sex by walking in 2019 
+  # plot_prevented_cases.png : Diseases cases prevented per sex by walking in 2019 
   # HIA_walking_2019.xlsx : Cases, daly, costs (medical + social) prevented by walking in 2019
-  # plot_deaths_prevented.tiff : Deaths prevented per sex by walking in 2019
-  # plot_YLL_prevented.tiff : YLL prevented per sex by walking in 2019 
+  # plot_deaths_prevented.png : Deaths prevented per sex by walking in 2019
+  # plot_YLL_prevented.png : YLL prevented per sex by walking in 2019 
   # 1€_km_duration.xlsx : Distance and duration that saved 1€ in 2019
+
+  # plot_cases_step.png : Benefits it we walk 10 000 steps
   
 
 
@@ -238,10 +240,9 @@ export(burden_IC, here("output", "Tables", "Linear", "HIA_walking_2019.xlsx"))
 
 
 
-
-##############################################################
-#                  RESULTS - VISUALIZATION                   #
-##############################################################
+################################################################################################################################
+#                                                 5. RESULTS - VISUALIZATION                                                   #
+################################################################################################################################
 
 ## Total of prevented cases, DALY, medical costs per sex and age group ----
 burden_sex_age <- data.frame()
@@ -312,7 +313,7 @@ cases_prevented <- ggplot(burden_sex_IC, aes(x = disease, y = tot_cases, ymin = 
 cases_prevented
 
   # Export plot
-ggsave(here("output", "Plots", "Linear", "plot_cases_prevented.tiff"), plot = cases_prevented)
+ggsave(here("output", "Plots", "Linear", "plot_cases_prevented.png"), plot = cases_prevented)
 
 
 
@@ -347,17 +348,38 @@ daly_prevented <- ggplot(burden_age_IC, aes(x = age_grp.x, y = tot_daly, fill = 
 daly_prevented
 
   #Export plot
-ggsave(here("output", "Plots", "Linear", "plot_DALY_prevented.tiff"), plot = daly_prevented)
+ggsave(here("output", "Plots", "Linear", "plot_DALY_prevented.png"), plot = daly_prevented)
 
 
-##############################
-## Per quartile of revenue (no need mais CODE A REECRIRE AVEC LA NOUVELLE FONCTION) ----
 
-  # Combine values with IC
+
+##  HIA according to quartile of revenue ----
+burden_rev <- data.frame()
+burden_rev_ub <- data.frame()
+burden_rev_lb <- data.frame()
+
+for (dis in dis_vec) {
+  dis_burden_rev <- burden_prevented(surv_dis, dis, c("quartile_rev"))
+  burden_rev <- bind_rows(burden_rev, dis_burden_rev) 
+  
+  # Upper bound
+  dis_burden_rev_ub <- burden_prevented(surv_dis_ub, dis, c("quartile_rev"))
+  burden_rev_ub <- bind_rows(burden_rev_ub, dis_burden_rev_ub) 
+  
+  # Lower bound
+  dis_burden_rev_lb <- burden_prevented(surv_dis_lb, dis, c("quartile_rev"))
+  burden_rev_lb <- bind_rows(burden_rev_lb, dis_burden_rev_lb) 
+}
+
+# Combine values with IC
+burden_rev_IC <- burden_rev %>% 
+  mutate(low_cases = burden_rev_lb[,"tot_cases"], sup_cases = burden_rev_ub[,"tot_cases"],
+         low_daly = burden_rev_lb[,"tot_daly"], sup_daly = burden_rev_ub[,"tot_daly"],
+         low_medic_costs = burden_rev_lb[,"tot_medic_costs"], sup_medic_costs = burden_rev_ub[,"tot_medic_costs"])
 
 
   # Rename columns and variables
-prevented_dis_rev_IC <-  prevented_dis_rev_IC %>% 
+burden_rev_IC <-  burden_rev_IC %>% 
   mutate(disease = recode_factor(disease, 
                                  bc = "Breast cancer", 
                                  cc="Colon cancer" , 
@@ -376,15 +398,16 @@ prevented_dis_rev_IC <-  prevented_dis_rev_IC %>%
 
 
   # Plot : Diseases cases prevented per revenue by walking in 2019 
-prevented_cases_rev <- ggplot(prevented_dis_rev_IC, aes(x = disease, y = tot_cases, ymin = low, ymax = sup, fill = Revenue)) +
+cases_prevented_rev <- ggplot(burden_rev_IC, aes(x = disease, y = tot_cases, ymin = low_cases, ymax = sup_cases, fill = Revenue)) +
   geom_bar(width = 0.7, position = position_dodge(.9), stat = "identity")  +
   geom_errorbar(position = position_dodge(0.9), width = .25) +
   ylab ("Cases prevented") +
   xlab("Disease") +
   theme_minimal()
-prevented_cases_rev
-###################################
+cases_prevented_rev
 
+#Export plot
+ggsave(here("output", "Plots", "Linear", "plot_cases_per_rev.png"), plot = cases_prevented_rev)
 
 
 
@@ -392,7 +415,7 @@ prevented_cases_rev
 
 
 ################################################################################################################################
-#                                                       4. DESCRIPTION                                                         #
+#                                                       6. DESCRIPTION                                                         #
 ################################################################################################################################
 
 ##############################################################
@@ -443,7 +466,7 @@ deaths_prevented <- ggplot(prevented_death, aes(x = age_grp.x, y = tot_cases, ym
 deaths_prevented
 
 # Export plot
-ggsave(here("output", "Plots", "Linear", "plot_deaths_prevented.tiff"), plot = deaths_prevented)
+ggsave(here("output", "Plots", "Linear", "plot_deaths_prevented.png"), plot = deaths_prevented)
 
 
 
@@ -465,7 +488,7 @@ YLL_prevented <- ggplot(prevented_death, aes(x = age_grp.x, y = tot_daly, ymin =
 YLL_prevented
 
 # Export plot : YLL prevented per sex by walking in 2019 
-ggsave(here("output", "Plots", "Linear", "plot_YLL_prevented.tiff"), plot = YLL_prevented)
+ggsave(here("output", "Plots", "Linear", "plot_YLL_prevented.png"), plot = YLL_prevented)
 
 
 
@@ -593,6 +616,221 @@ mt_2019_sup <- km_sup_2019 * CO2_emit * 1e-12
 mt_2019
 mt_2019_low
 mt_2019_sup
+
+
+
+
+
+###########################################################################################################################################################################
+###########################################################################################################################################################################
+#                                                                       HIA - 10 000 STEPS                                                                                #
+###########################################################################################################################################################################
+###########################################################################################################################################################################
+
+
+################################################################################################################################
+#                                                     1. IMPORT DATA                                                           #
+################################################################################################################################
+
+emp_step <- import(here("data_clean", "EMP_walkers.xlsx"))
+
+
+
+################################################################################################################################
+#                                                       2. DATASET                                                             #
+################################################################################################################################
+
+# Week time spent if people walk 10 000 steps (equivalent to 8km) (in min)
+week_time_step <- 8*7*60 / walk_speed
+
+emp_step <- emp_step %>% 
+  mutate(week_time = week_time_step)
+
+
+################################################################################################################################
+#                                               3. HEALTH IMPACT ASSESSMENT                                                    #
+################################################################################################################################
+
+health_step <- emp_step
+health_step_ub <- emp_step
+health_step_lb <- emp_step
+
+
+for (dis in dis_vec) {
+  params <- dis_setting(dis)
+  
+  # Percentage of disease decrease 
+  health_step<-  reduction_risk(health_step, dis, params$rr_women, params$rr_men, params$ref_women, params$ref_men)
+  health_step_ub <-  reduction_risk(health_step_ub, dis, params$rr_women_lb, params$rr_men_lb, params$ref_women, params$ref_men)
+  health_step_lb <-  reduction_risk(health_step_lb, dis, params$rr_women_ub, params$rr_men_ub, params$ref_women, params$ref_men)
+  
+  # Reduced incidence
+  dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
+  dis_reduction_risk <- paste0(dis, "_reduction_risk")
+    
+  health_step <-  reduc_incidence(health_step, dis_incidence_rate, dis_reduction_risk, dis)
+  health_step_ub <-  reduc_incidence(health_step_ub, dis_incidence_rate, dis_reduction_risk, dis)
+  health_step_lb <-  reduc_incidence(health_step_lb, dis_incidence_rate, dis_reduction_risk, dis)
+  
+  # DALY prevented  
+  health_step <- daly(health_step, dis)
+  health_step_ub <- daly_IC(health_step_ub, dis, "ub")
+  health_step_lb <- daly_IC(health_step_lb, dis, "lb")
+  
+  # Medical costs prevented
+  health_step <- medic_costs(health_step, dis)
+  health_step_ub <- medic_costs(health_step_ub, dis)
+  health_step_lb <- medic_costs(health_step_lb, dis)
+}
+
+
+
+##############################################################
+#                      HIA OUTCOMES                          #     with cases, DALY and medical costs
+##############################################################
+
+# Survey design ----
+surv_dis_step <- health_step %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),           # by sex and age group
+                   nest = TRUE)
+# IC
+# Upper bound
+surv_dis_step_ub <- health_step_ub %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),           
+                   nest = TRUE)
+
+# Lower bound
+surv_dis_step_lb <- health_step_lb %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),      
+                   nest = TRUE)
+
+
+# Total of prevented cases, DALY and saved costs, for each disease in 2019
+burden_step <- data.frame()
+burden_step_ub <- data.frame()
+burden_step_lb <- data.frame()
+for (dis in dis_vec) {
+  dis_burden_step <- burden_prevented(surv_dis_step, dis, "sexe")
+  burden_step <- bind_rows(burden_step, dis_burden_step) 
+  
+  dis_burden_step_ub <- burden_prevented(surv_dis_step_ub, dis, "sexe")
+  burden_step_ub <- bind_rows(burden_step_ub, dis_burden_step_ub) 
+  
+  dis_burden_step_lb <- burden_prevented(surv_dis_step_lb, dis, "sexe")
+  burden_step_lb <- bind_rows(burden_step_lb, dis_burden_step_lb) 
+}
+
+
+# Gather results with IC
+burden_step_IC <- burden_step %>% 
+  mutate(low_cases = burden_step_lb[,2], sup_cases = burden_step_ub[,2],
+         low_daly = burden_step_lb[,4], sup_daly = burden_step_ub[,4],
+         low_medic_costs = burden_step_lb[,6], sup_medic_costs = burden_step_ub[,6])
+
+
+
+##############################################################
+#                        SOCIAL IMPACT                       #
+##############################################################
+
+
+## SOCIAL COSTS (intangible)----
+# Add social costs
+burden_step_IC <- burden_step_IC %>% 
+  mutate(tot_soc_costs = tot_daly*vsl,
+         low_soc_costs = low_daly*vsl,
+         sup_soc_costs = sup_daly*vsl)
+
+# Reorganize columns
+burden_step_IC <- burden_step_IC %>% 
+  select(sexe,
+         disease,
+         tot_cases, tot_cases_se, low_cases, sup_cases,
+         tot_daly, tot_daly_se, low_daly, sup_daly,
+         tot_medic_costs, tot_medic_costs_se, low_medic_costs, sup_medic_costs,
+         tot_soc_costs, low_soc_costs, sup_soc_costs) %>% 
+  mutate(disease = recode_factor(disease, 
+                                 bc = "Breast cancer", 
+                                 cc="Colon cancer" , 
+                                 cvd ="CVD" , 
+                                 dem ="Dementia",
+                                 diab2 ="T2 Diabetes" , 
+                                 dep = "Depression",
+                                 mort ="Mortality")) %>% 
+  rename(Sex = sexe)
+
+
+
+# Export HIA : total of prevented cases, DALY and saved costs per disease
+export(burden_step_IC, here("output", "Tables", "Linear", "HIA_10000steps.xlsx"))
+
+
+
+################################################################################################################################
+#                                                      4. VISUALIZATION                                                        #
+################################################################################################################################
+
+# Plot : Cases prevented by walking in 2019 according to sex 
+cases_prevented_step <- ggplot() +
+  geom_bar(data = burden_sex_IC, 
+           mapping = aes(x = disease, y = tot_cases, fill = Sex),
+           width = 0.7,
+           position = position_dodge2(0.7),
+           stat = "identity") +
+  
+  geom_errorbar(data = burden_sex_IC,
+                mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex),
+                position = position_dodge(0.7),
+                width = 0.25) +
+  
+  scale_fill_manual(values = c("Female" = "darkorange1",
+                               "Male" = "chartreuse4")) +
+  
+  
+  geom_bar(data = burden_step_IC, 
+           mapping = aes(x = disease, y = tot_cases, color = Sex),
+           width = 0.7,
+           position = position_dodge2(0.7),
+           stat = "identity",
+           fill = NA,
+           linetype = "dashed") +
+  
+  scale_color_manual(values = c("Female" = "darkorange1",
+                                "Male" = "chartreuse4")) +
+  
+  geom_errorbar(data = burden_step_IC,
+                mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex),
+                position = position_dodge(0.7),
+                width = 0.25,
+                color = "black") +
+  
+  ylab("Cases prevented") +
+  xlab("Disease") +
+  theme_minimal()
+
+cases_prevented_step
+
+
+# Export plot
+ggsave(here("output", "Plots", "Linear", "plot_cases_step.png"), plot = cases_prevented_step)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
