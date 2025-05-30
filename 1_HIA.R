@@ -59,103 +59,22 @@ dis_vec = c("cc", "dem", "bc", "cvd", "diab2", "mort")
 #                                              4. HEALTH IMPACT ASSESSMENT                                                     #
 ################################################################################################################################
 
-
-
-##############################################################
-#                DISEASE REDUCTION RISK                      #
-##############################################################
-
-# Calculate the percentage of disease decrease in 2019 attributed to walking ----
+# Initialization
 health_walkers <- emp_walk
-for (dis in dis_vec) {
-  params <- dis_setting(dis)
-  health_walkers <-  reduction_risk(health_walkers, dis, params$rr_women, params$rr_men, params$ref_women, params$ref_men)
-}
-
-
-
-# IC
-  # Upper bound
 health_walkers_ub <- emp_walk
-for (dis in dis_vec) {
-  params <- dis_setting(dis)
-  health_walkers_ub <-  reduction_risk(health_walkers_ub, dis, params$rr_women_lb, params$rr_men_lb, params$ref_women, params$ref_men)
-} # use RR lower bound because the decrease will be higher i.e. the person exposed (walking) is less likely to have the disease  
-
-  # Lower bound
 health_walkers_lb <- emp_walk
-for (dis in dis_vec) {
-  params <- dis_setting(dis)
-  health_walkers_lb <-  reduction_risk(health_walkers_lb, dis, params$rr_women_ub, params$rr_men_ub, params$ref_women, params$ref_men)
-}
 
 
+# HIA calculation
+HIA_walkers <- calc_HIA(data = health_walkers,
+                     data_ub = health_walkers_ub,
+                     data_lb = health_walkers_lb,
+                     params = params,
+                     dis_vec = dis_vec)
 
-
-# Calculate the reduced disease incidence in 2019 attributed to walking ----
-for (dis in dis_vec) {
-  dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
-  dis_reduction_risk <- paste0(dis, "_reduction_risk")
-  
-  health_walkers <-  reduc_incidence(health_walkers, dis_incidence_rate, dis_reduction_risk, dis)
-}
-
-# IC
-  # Upper bound
-for (dis in dis_vec) {
-  dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
-  dis_reduction_risk <- paste0(dis, "_reduction_risk")
-  
-  health_walkers_ub <-  reduc_incidence(health_walkers_ub, dis_incidence_rate, dis_reduction_risk, dis)
-}
-  # Lower bound
-for (dis in dis_vec) {
-  dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
-  dis_reduction_risk <- paste0(dis, "_reduction_risk")
-  
-  health_walkers_lb <-  reduc_incidence(health_walkers_lb, dis_incidence_rate, dis_reduction_risk, dis)
-}
-
-
-
-
-##############################################################
-#                           DALY                             #
-##############################################################
-# Goal : To know the number of sick or death years prevented for each individual by walking
-
-# Calculate DALY (Disability-Adjusted Life Years) prevented for each disease in 2019
-for (dis in dis_vec) {
-  health_walkers <- daly(health_walkers, dis)
-
-
-  #Upper bound
-  health_walkers_ub <- daly_IC(health_walkers_ub, dis, "ub")
-
-  #Lower bound
-  health_walkers_lb <- daly_IC(health_walkers_lb, dis, "lb")
-}
-
-
-
-##############################################################
-#                   ECONOMIC IMPACT (1)                      #
-##############################################################
-
-## MEDICAL COSTS SAVED----
-
-# Calculate the medical costs associated with the reduced disease incidence for each individual in 2019 
-for (dis in dis_vec) {
-  health_walkers <- medic_costs(health_walkers, dis)
-
-# IC
-# Upper bound
-  health_walkers_ub <- medic_costs(health_walkers_ub, dis)
-
-# Lower bound
-  health_walkers_lb <- medic_costs(health_walkers_lb, dis)
-}
-
+health_walkers      <- HIA_walkers$data
+health_walkers_ub   <- HIA_walkers$data_ub
+health_walkers_lb   <- HIA_walkers$data_lb
 
 
 ##############################################################
@@ -651,37 +570,23 @@ emp_step <- emp_step %>%
 #                                               3. HEALTH IMPACT ASSESSMENT                                                    #
 ################################################################################################################################
 
+# Initialization
 health_step <- emp_step
 health_step_ub <- emp_step
 health_step_lb <- emp_step
 
 
-for (dis in dis_vec) {
-  params <- dis_setting(dis)
-  
-  # Percentage of disease decrease 
-  health_step<-  reduction_risk(health_step, dis, params$rr_women, params$rr_men, params$ref_women, params$ref_men)
-  health_step_ub <-  reduction_risk(health_step_ub, dis, params$rr_women_lb, params$rr_men_lb, params$ref_women, params$ref_men)
-  health_step_lb <-  reduction_risk(health_step_lb, dis, params$rr_women_ub, params$rr_men_ub, params$ref_women, params$ref_men)
-  
-  # Reduced incidence
-  dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
-  dis_reduction_risk <- paste0(dis, "_reduction_risk")
-    
-  health_step <-  reduc_incidence(health_step, dis_incidence_rate, dis_reduction_risk, dis)
-  health_step_ub <-  reduc_incidence(health_step_ub, dis_incidence_rate, dis_reduction_risk, dis)
-  health_step_lb <-  reduc_incidence(health_step_lb, dis_incidence_rate, dis_reduction_risk, dis)
-  
-  # DALY prevented  
-  health_step <- daly(health_step, dis)
-  health_step_ub <- daly_IC(health_step_ub, dis, "ub")
-  health_step_lb <- daly_IC(health_step_lb, dis, "lb")
-  
-  # Medical costs prevented
-  health_step <- medic_costs(health_step, dis)
-  health_step_ub <- medic_costs(health_step_ub, dis)
-  health_step_lb <- medic_costs(health_step_lb, dis)
-}
+# HIA calculation
+HIA_step <- calc_HIA(data = health_step,
+         data_ub = health_step_ub,
+         data_lb = health_step_lb,
+         params = params,
+         dis_vec = dis_vec)
+
+health_step      <- HIA_step$data
+health_step_ub   <- HIA_step$data_ub
+health_step_lb   <- HIA_step$data_lb
+
 
 
 
@@ -779,13 +684,13 @@ export(burden_step_IC, here("output", "Tables", "Linear", "HIA_10000steps.xlsx")
 # Plot : Cases prevented by walking in 2019 according to sex 
 cases_prevented_step <- ggplot() +
   geom_bar(data = burden_sex_IC, 
-           mapping = aes(x = disease, y = tot_cases, fill = Sex),
+           mapping = aes(x = disease, y = tot_cases, fill = Sex, alpha = "2019 baseline"),
            width = 0.7,
            position = position_dodge2(0.7),
            stat = "identity") +
   
   geom_errorbar(data = burden_sex_IC,
-                mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex),
+                mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex, alpha = "2019 baseline"),
                 position = position_dodge(0.7),
                 width = 0.25) +
   
@@ -794,21 +699,17 @@ cases_prevented_step <- ggplot() +
   
   
   geom_bar(data = burden_step_IC, 
-           mapping = aes(x = disease, y = tot_cases, color = Sex),
+           mapping = aes(x = disease, y = tot_cases, fill = Sex, alpha = "10,000 steps"),
            width = 0.7,
            position = position_dodge2(0.7),
-           stat = "identity",
-           fill = NA,
-           linetype = "dashed") +
-  
-  scale_color_manual(values = c("Female" = "darkorange1",
-                                "Male" = "chartreuse4")) +
+           stat = "identity") +
+  scale_alpha_manual(name   = "Scenario",
+                     values = c("2019 baseline" = 1, "10,000 steps" = 0.4)) +
   
   geom_errorbar(data = burden_step_IC,
-                mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex),
+                mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex, alpha = "10,000 steps"),
                 position = position_dodge(0.7),
-                width = 0.25,
-                color = "black") +
+                width = 0.25) +
   
   ylab("Cases prevented") +
   xlab("Disease") +
