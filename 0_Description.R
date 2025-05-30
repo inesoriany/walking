@@ -3,8 +3,10 @@
 ##############################################
 
 # GOALS : Description
+  # HEALTH :
+    # Health event incidence distribution
   # WALKING : 
-    # Mean walking distance by age group and sex
+    # Mean walking distance by age group and sex, by area type, by revenue
     # Proportion of people by distance walked
     # Rate of deadly accidents
   # DRIVING :
@@ -27,7 +29,8 @@ pacman :: p_load(
   epikit,       # Age categories creation
   survey,       # Survey management
   srvyr,        # Survey management
-  ggplot2       # Data visualization
+  ggplot2,      # Data visualization
+  rlang
 )
 
 
@@ -44,12 +47,21 @@ emp_walkers <- import(here("data_clean", "EMP_walkers.xlsx"))
 # EMP 2019 subset for walkers
 emp_drivers <- import(here("data_clean", "EMP_drivers.xlsx"))
 
+
+################################################################################################################################
+#                                                      3. PARAMETERS                                                           #
+################################################################################################################################
+
+# Import parameters
 source(here("0_Parameters.R"))
 
+# Diseases considered
+dis_vec = c("cc", "dem", "bc", "cvd", "diab2", "mort")
+
 
 ################################################################################################################################
 ################################################################################################################################
-#                                                      3. DESCRIPTION                                                          #
+#                                                      4. DESCRIPTION                                                          #
 ################################################################################################################################
 ################################################################################################################################
 
@@ -105,6 +117,53 @@ plot(mean_mortality_rates)
 
 # Export plot
 ggsave(here("output", "Plots", "Description", "plot_mean_mortality_rates.png"), plot = mean_mortality_rates)
+
+
+
+## Incidence distribution per age and sex
+dis_names <- c(bc = "Breast cancer", 
+               cc="Colon cancer", 
+               cvd ="CVD", 
+               dem ="Dementia",
+               diab2 ="T2 Diabetes", 
+               mort ="Mortality")
+
+
+for(dis in dis_vec) {
+  dis_distrib <- ggplot() +
+    geom_point(data = emp_walkers, 
+               mapping = aes(x = .data[["age_grp.x"]],
+                             y = .data[[paste0(dis, "_incidence")]],
+                             color = .data[["sexe"]]), 
+               size = 1, alpha = 0.5) +
+    
+    geom_smooth(data = emp_walkers, 
+                mapping = aes(x = .data[["age_grp.x"]],
+                              y = .data[[paste0(dis, "_incidence")]],
+                              group = .data[["sexe"]],
+                              color = .data[["sexe"]]), 
+                method = "lm", size = 1) +
+    
+    scale_color_manual(name = "Sex",
+                       values = c("Female" = "darkorange1",
+                                  "Male" = "chartreuse4")) +
+    
+    labs(title = paste0(dis_names[[dis]]),
+         y = "Incidence",
+         x = "Age group") +
+
+    theme_minimal() +
+    theme(legend.position = "top")
+  
+  assign(paste0(dis, "_distrib"), dis_distrib)
+  print(dis_distrib)
+}
+
+# Export
+for (dis in dis_vec){
+ggsave(here("output", "Plots", "Description", "Diseases", paste0("plot_",dis, "_incidence.png")), plot = get(paste0(dis,"_distrib")))
+}
+
 
 
 
@@ -167,12 +226,26 @@ prop_walkers_km <- ggplot(proportion_km, aes(x = dist_grp, y = proportion)) +
        x = "Distance range",
        y = "Proportion") +
   theme_minimal()
+prop_walkers_km
 
 # Export plot
 ggsave(here("output", "Plots", "Description", "plot_prop_walkers_km.png"), plot = prop_walkers_km)
 
 
-# Proportion of distances walked by women
+# Proportion of distances walked by each sex
+prop_sex <-  emp_walkers %>% 
+  filter(pond_indc != "NA") %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strat = sexe,
+                   nest = TRUE) %>% 
+  group_by (sex = sexe) %>% 
+  summarise(tot_km = survey_total(nbkm_walking)) %>% 
+  mutate(proportion = tot_km / sum(tot_km))
+
+
+
+
 
 
 
@@ -221,6 +294,78 @@ plot(mean_km_walkers)
 
   # Export plot
 ggsave(here("output", "Plots", "Description", "plot_mean_km_walkers.png"), plot = mean_km_walkers)
+
+
+
+
+## Walking levels per area ----
+mean_distance_area <- jour %>% 
+  group_by(area_type) %>% 
+  summarise(mean_distance = survey_mean(nbkm_walking, na.rm = TRUE)) %>% 
+  mutate(area_type = factor(area_type, levels = c("rural", "semi_urban", "urban", "paris")))
+
+
+mean_km_area = ggplot(mean_distance_area, aes(x = area_type, y = mean_distance,
+                                                   ymin = mean_distance - zq*mean_distance_se, ymax = mean_distance + zq*mean_distance_se,
+                                                   fill = area_type)) +
+  geom_col(width = 0.7, position = position_dodge2(0.4)) +
+  geom_errorbar(position = position_dodge(.7), width = .25) + 
+  scale_fill_manual(name = "Urban unit slices",
+                    labels = c("rural" = "<5,000 inhabitants",
+                              "semi_urban" = "<50,000 inhabitants",
+                              "urban"= "≥ 50,000 inhabitants",
+                              "paris" = "Paris"),
+                    values = c(
+                      "rural" = "palegreen3",
+                      "semi_urban" = "darkorange",
+                      "urban" = "firebrick2",
+                      "paris" = "slateblue"
+                    )) +
+  scale_x_discrete(labels = c("rural" = "Rural",
+                              "semi_urban" = "Semi-urban", 
+                              "urban" = "Urban",
+                              "paris" = "Paris")) +
+  labs(x = "Area type",
+       y = "Mean distance walked (km per day)") +
+  theme_minimal()
+plot(mean_km_area)
+
+  # Export plot 
+ggsave(here("output", "Plots", "Description", "plot_mean_km_area.png"), plot = mean_km_area)
+
+
+
+## Walking levels per quartile of revenues ----
+mean_distance_rev <- jour %>% 
+  group_by(quartile_rev) %>% 
+  summarise(mean_distance = survey_mean(nbkm_walking, na.rm = TRUE)) %>% 
+  mutate(quartile_rev = factor(quartile_rev,
+                               levels = c("1", "2", "3", "4")))
+
+
+mean_km_rev = ggplot(mean_distance_rev, aes(x = quartile_rev, y = mean_distance,
+                                              ymin = mean_distance - zq*mean_distance_se, ymax = mean_distance + zq*mean_distance_se,
+                                              fill = quartile_rev)) +
+  geom_col(width = 0.7, position = position_dodge2(0.4)) +
+  geom_errorbar(position = position_dodge(.7), width = .25) + 
+  scale_fill_manual(values = c("1" = "indianred1",
+                               "2" = "darkolivegreen3",
+                               "3" = "cyan3",
+                               "4" = "mediumpurple1")) +
+  scale_x_discrete(labels = c("1" = "Q1",
+                              "2" = "Q2", 
+                              "3" = "Q3",
+                              "4" = "Q4")) +
+  labs(x = "Revenue",
+       y = "Mean distance walked (km per day)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+plot(mean_km_rev)
+
+# Export plot 
+ggsave(here("output", "Plots", "Description", "plot_mean_km_rev.png"), plot = mean_km_rev)
+
+
 
 
 
@@ -325,12 +470,33 @@ ggsave(here("output", "Plots", "Description", "plot_drivers_shorttrips.png"), pl
 
 
 
+## Proportion of short car trips
+prop_short_trips <- emp_drivers %>%
+  summarise(
+    tot_km = sum(mdisttot_fin1, na.rm = TRUE),
+    tot_2km = sum(mdisttot_fin1[mdisttot_fin1 < 2], na.rm = TRUE),
+    proportion_short = tot_2km / tot_km)
+  
+export(prop_short_trips, here("output", "Tables", "Description", "prop_shorttrips.xlsx"))
+
 
 
 
 ##############################################################
 #                MEAN DRIVEN DISTANCE (<2km)                 #
 ##############################################################
+
+# Mean distance driven (km) in the past day among those reporting short car trips <2km 
+mean_short_trips <- emp_drivers %>% 
+  filter(pond_jour !="NA", mdisttot_fin1 > 0, mdisttot_fin1 <= 2) %>% 
+  as_survey_design(ids = ident_ind, 
+                   weights = pond_jour) %>% 
+  summarise(day_mean = survey_mean(mdisttot_fin1, na.rm = TRUE))
+
+
+mean_short_trips_IC <- confint(mean_short_trips$day_mean)
+mean_short_trips_IC 
+
 
 # Mean distance driven (km) in the past day among those reporting short car trips <2km according to sex and age
 mean_drivers_2km <- emp_drivers %>% 
