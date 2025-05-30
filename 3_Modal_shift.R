@@ -22,6 +22,7 @@
   # plot_modalshift_morbidity_prevented.png : Chronic diseases prevented
   # plot_modalshift_mortality_prevented.png : Premature deaths prevented
   # plot_modalshift_morbi_mortality_prevented.png : Combined morbi-mortality graph
+  # modalshift_CO2_emit.png : CO2 emissions prevented
   # modalshift_tot_km_CO2_emit.xlsx : Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
   # modalshift_1km_value.xlsx : Economic value of 1 km walked per scenario
   # modalshift_1€_km_duration.xlsx : Distance and duration to save 1€ per scenario
@@ -463,7 +464,7 @@ for(dist in dist_vec) {
 set.seed(123)
 N=100
 tot_km_CO2 <- data.frame()
-tot_km_scenario <- data.frame()
+tot_km_CO2_scenario <- data.frame()
 
 for (dist in dist_vec) {
   print(paste0("Distance = ", dist))
@@ -493,14 +494,14 @@ for (dist in dist_vec) {
     tot_km_IC_Rubin <- paste0(round(IC_km_Rubin[2], 3), " (", round(IC_km_Rubin[1], 3), " - ", round(IC_km_Rubin[3], 3), ")")
     
     
-    IC_mt <- IC_km * CO2_emit *1e-6                                                                  # CO2 emissions (in Mt CO2)
-    tot_mt_IC <- paste0(round(IC_mt["50%"], 3), " (", round(IC_mt["2.5%"], 3), " - ", round(IC_mt["97.5%"], 3), ")")
+    IC_kt <- IC_km * CO2_emit *1e-3                                                                  # CO2 emissions (in kt CO2)
+    tot_kt_IC <- paste0(round(IC_kt["50%"], 3), " (", round(IC_kt["2.5%"], 3), " - ", round(IC_kt["97.5%"], 3), ")")
     
-    IC_mt_Rubin <- IC_km_Rubin* CO2_emit * 1e-6                                                      # Rubin's rule
-    tot_mt_IC_Rubin <- paste0(round(IC_mt_Rubin[2], 3), " (", round(IC_mt_Rubin[1], 3), " - ", round(IC_mt_Rubin[3], 3), ")")
+    IC_kt_Rubin <- IC_km_Rubin* CO2_emit * 1e-3                                                      # Rubin's rule
+    tot_kt_IC_Rubin <- paste0(round(IC_kt_Rubin[2], 3), " (", round(IC_kt_Rubin[1], 3), " - ", round(IC_kt_Rubin[3], 3), ")")
     
     
-    tot_km_scenario <- bind_rows(tot_km_scenario, data.frame(
+    tot_km_CO2_scenario <- bind_rows(tot_km_CO2_scenario, data.frame(
       distance = dist,
       percentage = perc,
       km = IC_km[["50%"]],
@@ -508,27 +509,67 @@ for (dist in dist_vec) {
       km_sup = IC_km[["97.5%"]], 
       Rubin_km = IC_km_Rubin[2],
       Rubin_km_low = IC_km_Rubin[1],
-      Rubin_km_sup = IC_km_Rubin[3]))
+      Rubin_km_sup = IC_km_Rubin[3],
+      CO2_kt = IC_kt[["50%"]],
+      CO2_kt_low = IC_kt[["2.5%"]],
+      CO2_kt_sup = IC_kt[["97.5%"]],
+      Rubin_kt = IC_kt_Rubin[2],
+      Rubin_kt_low = IC_kt_Rubin[1],
+      Rubin_kt_sup = IC_kt_Rubin[3] ))
     
     tot_km_CO2 <- bind_rows(tot_km_CO2, data.frame(
       distance = dist,
       percentage = paste0(perc*100, "%"),
       total_millions_km = tot_km_IC,
       Rubin_total_millions_km = tot_km_IC_Rubin,
-      CO2_emissions_Mt = tot_mt_IC,
-      Rubin_CO2_emissions_Mt = tot_mt_IC_Rubin))
+      CO2_emissions_kt = tot_kt_IC,
+      Rubin_CO2_emissions_kt = tot_kt_IC_Rubin))
     
   }
 }
 
 
 # Export replications - Total km walked per scenario
-export(tot_km_scenario, here("output", "RDS", "modalshift_tot_km.rds"))
+export(tot_km_CO2_scenario, here("output", "RDS", "modalshift_tot_km_CO2.rds"))
 
 # Export replications - Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
 export(tot_km_CO2, here("output", "Tables", "Linear", "Modal shift", "modalshift_tot_km_CO2_emit.xlsx"))
 
 
+##############################################################
+#                   HEATMAP - CO2 EMISSIONS                  #
+##############################################################
+
+# Import replications - Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
+tot_km_CO2_scenario <- import(here("output", "RDS", "modalshift_tot_km_CO2.rds"))
+
+
+# Heatmap (in kilotons)
+CO2_shift <- ggplot(data = tot_km_CO2_scenario) +
+  geom_tile(aes(x = distance, y = percentage*100, fill = CO2_kt),
+            color = "white") +
+  scale_fill_viridis() +
+  labs(x = "Distances of car trips shifted (km)",
+       y = "Share shifted (%)", 
+       title = "CO2 emissions prevented",
+       fill = "CO2 emissions prevented (kto)") +
+  theme(legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key.height = grid::unit(1, "cm"),
+        legend.key.width = grid::unit(0.6, "cm"),
+        
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(vjust = 0.2),
+        axis.ticks = element_line(linewidth = 0.4),
+        axis.title = element_text(size = 12, face = "bold"),
+        
+        plot.title = element_text(hjust = 0, size = 14, face = "bold")) +
+  theme_minimal()
+CO2_shift
+
+
+# Export heatmap
+ggsave(here("output", "Plots", "Linear", "Modal shift", "modalshift_CO2_emit.png"), plot = CO2_shift)
 
 
 
