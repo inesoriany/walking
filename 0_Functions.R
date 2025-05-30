@@ -57,10 +57,10 @@ reduction_risk = function(data, dis, rr_women, rr_men, ref_women, ref_men) {
 
 
 
-# FUNCTION loglinear_reduction_risk : Calculate the disease risk reduction percentage for each individual with a log linear regression
+# FUNCTION log_reduction_risk : Calculate the disease risk reduction percentage for each individual with a log linear regression
 # (% of decrease in disease risk comparing to the baseline : if people did not walk)
 
-loglinear_reduction_risk = function(data, dis, rr_women, rr_men, ref_women, ref_men) {
+log_reduction_risk = function(data, dis, rr_women, rr_men, ref_women, ref_men) {
   data[[paste0(dis, "_reduction_risk")]] <- ifelse(                        # Calculate risk reduction percentage
     data$sexe == "Female",
     1-(exp(log(rr_women) * data$week_time / ref_women)),                       # for women % of decrease for this disease risk
@@ -125,6 +125,80 @@ medic_costs = function(data, dis) {
 }
 
 
+##############################################################
+#                        CALCULATE HIA                       #
+##############################################################
+
+## LINEAR
+# FUNCTION calc_HIA : Calculate the disease reduction percentage, reduced incidence, DALY and medical costs prevented for each individual
+calc_HIA = function(data, data_ub, data_lb, params, dis_vec){
+
+  for (dis in dis_vec) {
+    params <- dis_setting(dis)
+    
+    # Percentage of disease decrease 
+    data <-  reduction_risk(data, dis, params$rr_women, params$rr_men, params$ref_women, params$ref_men)
+    data_ub <-  reduction_risk(data_ub, dis, params$rr_women_lb, params$rr_men_lb, params$ref_women, params$ref_men)
+    data_lb <-  reduction_risk(data_lb, dis, params$rr_women_ub, params$rr_men_ub, params$ref_women, params$ref_men)
+    
+    # Reduced incidence
+    dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
+    dis_reduction_risk <- paste0(dis, "_reduction_risk")
+    
+    data <-  reduc_incidence(data, dis_incidence_rate, dis_reduction_risk, dis)
+    data_ub <-  reduc_incidence(data_ub, dis_incidence_rate, dis_reduction_risk, dis)
+    data_lb <-  reduc_incidence(data_lb, dis_incidence_rate, dis_reduction_risk, dis)
+    
+    # DALY prevented  
+    data <- daly(data, dis)
+    data_ub <- daly_IC(data_ub, dis, "ub")
+    data_lb <- daly_IC(data_lb, dis, "lb")
+    
+    # Medical costs prevented
+    data <- medic_costs(data, dis)
+    data_ub <- medic_costs(data_ub, dis)
+    data_lb <- medic_costs(data_lb, dis)
+  }
+  return(list (data = data, data_ub = data_ub, data_lb = data_lb))
+}
+
+
+## LOG-LINEAR
+# FUNCTION calc_HIA : Calculate the disease reduction percentage, reduced incidence, DALY and medical costs prevented for each individual
+log_calc_HIA = function(data, data_ub, data_lb, params, dis_vec){
+  
+  for (dis in dis_vec) {
+    params <- dis_setting(dis)
+    
+    # Percentage of disease decrease 
+    data <-  log_reduction_risk(data, dis, params$rr_women, params$rr_men, params$ref_women, params$ref_men)
+    data_ub <-  reduction_risk(data_ub, dis, params$rr_women_lb, params$rr_men_lb, params$ref_women, params$ref_men)
+    data_lb <-  reduction_risk(data_lb, dis, params$rr_women_ub, params$rr_men_ub, params$ref_women, params$ref_men)
+    
+    # Reduced incidence
+    dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
+    dis_reduction_risk <- paste0(dis, "_reduction_risk")
+    
+    data <-  reduc_incidence(data, dis_incidence_rate, dis_reduction_risk, dis)
+    data_ub <-  reduc_incidence(data_ub, dis_incidence_rate, dis_reduction_risk, dis)
+    data_lb <-  reduc_incidence(data_lb, dis_incidence_rate, dis_reduction_risk, dis)
+    
+    # DALY prevented  
+    data <- daly(data, dis)
+    data_ub <- daly_IC(data_ub, dis, "ub")
+    data_lb <- daly_IC(data_lb, dis, "lb")
+    
+    # Medical costs prevented
+    data <- medic_costs(data, dis)
+    data_ub <- medic_costs(data_ub, dis)
+    data_lb <- medic_costs(data_lb, dis)
+  }
+  return(list (data = data, data_ub = data_ub, data_lb = data_lb))
+}
+
+
+
+
 
 ##############################################################
 #                        HIA OUTCOMES                        #
@@ -173,7 +247,7 @@ generate_RR_distrib = function (RR, low, sup, N) {          # N : number of rand
 }
 
 
-
+## LINEAR
 # FUNCTION calc_HIA_replicate : Calculate HIA for each replicate
 #set.seed()
 calc_HIA_replicate = function(data, dis) {
@@ -201,6 +275,35 @@ calc_HIA_replicate = function(data, dis) {
 
 
 
+## LOG LINEAR
+# FUNCTION log_calc_HIA_replicate : Calculate HIA for each replicate
+#set.seed()
+log_calc_HIA_replicate = function(data, dis) {
+  params <- dis_setting(dis)                                                            # Parameters of diseases
+  
+  # Generate RR values for women and men
+  rr_women <-  generate_RR_distrib (RR = params$rr_women, params$rr_women_lb, params$rr_women_ub, N=1)
+  if (dis %in% c("bc", "cc")) {                                                          # if disease is bc or cc
+    rr_men <- generate_RR_distrib (RR = params$rr_men, params$rr_men_lb, params$rr_men_ub, N=1)
+  } else {
+    rr_men <- rr_women
+  }    
+  data <- log_reduction_risk(data, dis, rr_women, rr_men, params$ref_women, params$ref_men)   # Reduction disease risk percentage
+  
+  dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
+  dis_reduction_risk <- paste0(dis, "_reduction_risk")
+  data <-  reduc_incidence(data, dis_incidence_rate, dis_reduction_risk, dis)           # Reduced incidence
+  
+  data <- daly(data, dis)                                                               # DALY prevented         
+  
+  data <- medic_costs(data, dis)                                                        # Medical costs prevented
+  
+  return(data)
+}
+
+
+
+## LINEAR
 # FUNCTION burden_prevented_replicate : Total of prevented cases, DALY and saved costs, for each disease based on RR random values issued (Monte-Carlo)
 burden_prevented_replicate = function(data, dis, N, group){                             # group : Column name (or names) used to group the results (e.g., "age", "sex")
   burden_dis <- data.frame()
@@ -225,6 +328,36 @@ burden_prevented_replicate = function(data, dis, N, group){                     
   }
   return(burden_dis)
 }
+
+
+
+## LOG LINEAR
+# FUNCTION log_burden_prevented_replicate : Total of prevented cases, DALY and saved costs, for each disease based on RR random values issued (Monte-Carlo)
+log_burden_prevented_replicate = function(data, dis, N, group){                             # group : Column name (or names) used to group the results (e.g., "age", "sex")
+  burden_dis <- data.frame()
+  
+  for (i in 1:N) {                                                                      # N replicates
+    print(i)                                                                            # To track each run 
+    print(paste0("~", dis))                                                             # To track each disease
+    
+    data_replicate <- log_calc_HIA_replicate(data, dis)                                     # Each i time, draw 1 random RR for men and women, for each disease
+    
+    burden_i <- data_replicate %>%                                                      # HIA outcomes based on generated RR values
+      as_survey_design(ids = ident_ind,
+                       weights = pond_indc) %>% 
+      group_by(across(all_of(group))) %>% 
+      summarise(tot_cases = survey_total(!!sym(paste0(dis, "_reduc_incidence")), na.rm = TRUE),       # Total of prevented cases per disease in this replicate
+                tot_daly = survey_total(!!sym(paste0(dis, "_daly")), na.rm = TRUE),                 # Total of prevented DALY per disease in this replicate
+                tot_medic_costs = survey_total(!!sym(paste0(dis, "_medic_costs")), na.rm = TRUE)    # Total of saved medical costs per disease in this replicate
+      ) %>%             
+      mutate(disease = dis, run = i)
+    
+    burden_dis <- bind_rows(burden_dis, burden_i)                                    # A table per disease : HIA results for each disease for all runs
+  }
+  return(burden_dis)
+}
+
+
 
 
 
