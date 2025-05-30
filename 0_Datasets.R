@@ -135,6 +135,11 @@ emp_subset <- emp_subset %>%
   rename(mort_rate = MR)
 
 
+# Calculate death incidence
+emp_subset <-  emp_subset %>% 
+  mutate(mort_incidence = mort_rate * pop_age_sex)
+
+
 # Calculate incidence rates
 dis_incidence <- c("cc_incidence", "dem_incidence", "bc_incidence", "cvd_incidence", "diab2_incidence")
 
@@ -175,6 +180,17 @@ emp_subset <-  emp_subset %>%
 # Remove column mdisttot_fin1 (not useful for walkers)
 emp_walkers <- emp_subset %>% 
   select(-mdisttot_fin1)
+
+
+# Area type
+emp_walkers <- emp_walkers %>%
+  mutate(area_type = case_when(
+    tuu2017_res %in% 2:4 ~ "semi_urban",
+    tuu2017_res %in% 5:7 ~ "urban",
+    tuu2017_res == 8     ~ "paris",
+    TRUE                 ~ "rural"
+  )
+)
 
 
 ################################################################################################################################
