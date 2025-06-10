@@ -72,7 +72,7 @@ burden_replicate_age <- data.frame()
 set.seed(123)                                                              # Fix a seed to guarantee reproducibility of simulations
 for (dis in dis_vec) {
   burden_dis <- log_burden_prevented_replicate (health_replicate, dis, N = 1000, "age_grp.x")           # HIA for all runs of 1 disease
-  burden_replicate_age <- bind_rows(burden_replicate_age, burden_dis)                               # HIA for all diseases
+  burden_replicate_age <- bind_rows(burden_replicate_age, burden_dis)                                   # HIA for all diseases
 }
 
 
@@ -188,6 +188,11 @@ outcome_vec <- c("tot_cases", "tot_daly", "tot_medic_costs", "tot_soc_costs")
 set.seed(123)
 HIA_disease <- HIA_burden_IC(burden_disease, dis_vec, outcome_vec, calc_replicate_IC)
 
+
+  # Export results 
+export(HIA_disease, here("output", "RDS", "Log linear", "HIA_disease_1000replicate.rds"))
+
+
   # OTHER VISUALIZATION
 HIA_per_disease <- data.frame(disease = HIA_disease[["disease"]])
 for (out in outcome_vec){
@@ -196,7 +201,7 @@ for (out in outcome_vec){
 }
 
   # Export results 
-export(HIA_per_disease, here("output", "Tables", "Linear", "HIA_per_disease.xlsx"))
+export(HIA_per_disease, here("output", "Tables", "Log linear", "HIA_per_disease.xlsx"))
 
 
 
@@ -438,11 +443,12 @@ export(soc_euro_unit_duration_2019, here("output", "Tables", "Log linear", "soc_
 
 
 ################################################################################################################################
-#                                                  7. DESCRIPTION (optional)                                                   #
+#                                               7. DESCRIPTION (optional)                                                      #
 ################################################################################################################################
 
 # IMPORT DATA (to avoid re-generating Monte-Carlo replications)
 burden_replicate_age <- import(here("output","RDS","Log linear", "logHIA_1000replicate_per_age.rds"))
+
 
 
 # Mean value for each outcome per disease of random sampled value (no need)
@@ -499,8 +505,6 @@ median_daly_prevented <- ggplot(burden_replicate_median, aes(x = age_grp.x, y = 
   ylab("Median DALY") +
   theme_minimal()
 median_daly_prevented
-
-
 
 
 
