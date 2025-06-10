@@ -27,7 +27,8 @@ pacman :: p_load(
   here,         # Localization of files 
   dplyr,        # Data management
   srvyr,        # Survey
-  survey
+  survey,
+  ggplot2       # Data visualization
 )
 
 
@@ -589,7 +590,6 @@ health_step_lb   <- HIA_step$data_lb
 
 
 
-
 ##############################################################
 #                      HIA OUTCOMES                          #     with cases, DALY and medical costs
 ##############################################################
@@ -616,18 +616,22 @@ surv_dis_step_lb <- health_step_lb %>%
                    nest = TRUE)
 
 
-# Total of prevented cases, DALY and saved costs, for each disease in 2019
+##############################################################
+#                           GLOBAL                           #
+##############################################################
+
+# Total of prevented cases, DALY and saved costs, for each disease in 2019 ----
 burden_step <- data.frame()
 burden_step_ub <- data.frame()
 burden_step_lb <- data.frame()
 for (dis in dis_vec) {
-  dis_burden_step <- burden_prevented(surv_dis_step, dis, "sexe")
+  dis_burden_step <- burden_prevented(surv_dis_step, dis, NULL)
   burden_step <- bind_rows(burden_step, dis_burden_step) 
   
-  dis_burden_step_ub <- burden_prevented(surv_dis_step_ub, dis, "sexe")
+  dis_burden_step_ub <- burden_prevented(surv_dis_step_ub, dis, NULL)
   burden_step_ub <- bind_rows(burden_step_ub, dis_burden_step_ub) 
   
-  dis_burden_step_lb <- burden_prevented(surv_dis_step_lb, dis, "sexe")
+  dis_burden_step_lb <- burden_prevented(surv_dis_step_lb, dis, NULL)
   burden_step_lb <- bind_rows(burden_step_lb, dis_burden_step_lb) 
 }
 
@@ -640,13 +644,9 @@ burden_step_IC <- burden_step %>%
 
 
 
-##############################################################
-#                        SOCIAL IMPACT                       #
-##############################################################
-
 
 ## SOCIAL COSTS (intangible)----
-# Add social costs
+# Add social costs (in euros)
 burden_step_IC <- burden_step_IC %>% 
   mutate(tot_soc_costs = tot_daly*vsl,
          low_soc_costs = low_daly*vsl,
@@ -654,6 +654,63 @@ burden_step_IC <- burden_step_IC %>%
 
 # Reorganize columns
 burden_step_IC <- burden_step_IC %>% 
+  select(disease,
+         tot_cases, tot_cases_se, low_cases, sup_cases,
+         tot_daly, tot_daly_se, low_daly, sup_daly,
+         tot_medic_costs, tot_medic_costs_se, low_medic_costs, sup_medic_costs,
+         tot_soc_costs, low_soc_costs, sup_soc_costs) %>% 
+  mutate(disease = recode_factor(disease, 
+                                 bc = "Breast cancer", 
+                                 cc="Colon cancer" , 
+                                 cvd ="CVD" , 
+                                 dem ="Dementia",
+                                 diab2 ="T2 Diabetes" , 
+                                 dep = "Depression",
+                                 mort ="Mortality")) 
+
+
+# Export HIA : total of prevented cases, DALY and saved costs per disease
+export(burden_step_IC, here("output", "Tables", "Log linear", "HIA_10000steps.xlsx"))
+
+
+##############################################################
+#                             SEX                            #
+##############################################################
+
+# HIA according to sex ----
+burden_sex_step <- data.frame()
+burden_sex_step_ub <- data.frame()
+burden_sex_step_lb <- data.frame()
+for (dis in dis_vec) {
+  dis_burden_sex_step <- burden_prevented(surv_dis_step, dis, "sexe")
+  burden_sex_step <- bind_rows(burden_sex_step, dis_burden_sex_step) 
+  
+  dis_burden_sex_step_ub <- burden_prevented(surv_dis_step_ub, dis, "sexe")
+  burden_sex_step_ub <- bind_rows(burden_sex_step_ub, dis_burden_sex_step_ub) 
+  
+  dis_burden_sex_step_lb <- burden_prevented(surv_dis_step_lb, dis, "sexe")
+  burden_sex_step_lb <- bind_rows(burden_sex_step_lb, dis_burden_sex_step_lb) 
+}
+
+
+# Gather results with IC
+burden_sex_step_IC <- burden_sex_step %>% 
+  mutate(low_cases = burden_sex_step_lb[,2], sup_cases = burden_sex_step_ub[,2],
+         low_daly = burden_sex_step_lb[,4], sup_daly = burden_sex_step_ub[,4],
+         low_medic_costs = burden_sex_step_lb[,6], sup_medic_costs = burden_sex_step_ub[,6])
+
+
+
+
+## SOCIAL COSTS (intangible)----
+# Add social costs
+burden_sex_step_IC <- burden_sex_step_IC %>% 
+  mutate(tot_soc_costs = tot_daly*vsl,
+         low_soc_costs = low_daly*vsl,
+         sup_soc_costs = sup_daly*vsl)
+
+# Reorganize columns
+burden_sex_step_IC <- burden_sex_step_IC %>% 
   select(sexe,
          disease,
          tot_cases, tot_cases_se, low_cases, sup_cases,
@@ -673,7 +730,7 @@ burden_step_IC <- burden_step_IC %>%
 
 
 # Export HIA : total of prevented cases, DALY and saved costs per disease
-export(burden_step_IC, here("output", "Tables", "Log linear", "HIA_10000steps.xlsx"))
+export(burden_sex_step_IC, here("output", "Tables", "Log linear", "HIA_sex_10000steps.xlsx"))
 
 
 
@@ -698,7 +755,7 @@ cases_prevented_step <- ggplot() +
                                "Male" = "chartreuse4")) +
   
   
-  geom_bar(data = burden_step_IC, 
+  geom_bar(data = burden_sex_step_IC, 
            mapping = aes(x = disease, y = tot_cases, fill = Sex, alpha = "10,000 steps"),
            width = 0.7,
            position = position_dodge2(0.7),
@@ -706,7 +763,7 @@ cases_prevented_step <- ggplot() +
   scale_alpha_manual(name   = "Scenario",
                      values = c("2019 baseline" = 1, "10,000 steps" = 0.4)) +
   
-  geom_errorbar(data = burden_step_IC,
+  geom_errorbar(data = burden_sex_step_IC,
                 mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex, alpha = "10,000 steps"),
                 position = position_dodge(0.7),
                 width = 0.25) +
@@ -719,17 +776,46 @@ cases_prevented_step
 
 
 # Export plot
-ggsave(here("output", "Plots", "Log linear", "plot_cases_step.png"), plot = cases_prevented_step)
+ggsave(here("output", "Plots", "Log linear", "plot_cases_10000step.png"), plot = cases_prevented_step)
 
 
 
+################################################################################################################################
+#                                                       5. DESCRIPTION                                                         #
+################################################################################################################################
+
+##############################################################
+#                   Total chronic diseases                   #
+##############################################################
+
+# Main analysis
+sum(morbidity_burden_IC[["tot_cases"]])
+
+# 10 000 steps
+morbidity_step_IC <- burden_step_IC %>% 
+  filter(disease != "Mortality")
+sum(morbidity_step_IC[["tot_cases"]])
 
 
+##############################################################
+#                        Total deaths                        #
+##############################################################
+# 10 000 steps
+mortality_step_IC <- burden_step_IC %>% 
+  filter(disease == "Mortality")
+
+mortality_step_IC[["tot_cases"]]
 
 
+##############################################################
+#             Ratio 10 000 steps VS main analysis            #
+############################################################## 
 
+# Chronic diseases
+sum(morbidity_step_IC[["tot_cases"]]) / sum(morbidity_burden_IC[["tot_cases"]])
 
-
+# Mortality
+mortality_step_IC[["tot_cases"]] / mortality_burden_IC[["tot_cases"]]
 
 
 
