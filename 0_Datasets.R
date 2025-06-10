@@ -184,13 +184,15 @@ emp_walkers <- emp_subset %>%
 
 # Area type
 emp_walkers <- emp_walkers %>%
-  mutate(area_type = case_when(
-    tuu2017_res %in% 2:4 ~ "semi_urban",
-    tuu2017_res %in% 5:7 ~ "urban",
-    tuu2017_res == 8     ~ "paris",
-    TRUE                 ~ "rural"
+  mutate(
+    area_type = case_when(
+      tuu2017_res %in% 2:4 ~ "semi_urban",
+      tuu2017_res %in% 5:8 ~ "urban",
+      TRUE                ~ "rural"
+    ),
+    area_type = factor(area_type, levels = c("rural", "semi_urban", "urban"))
   )
-)
+
 
 
 ################################################################################################################################
