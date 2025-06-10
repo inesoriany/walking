@@ -251,11 +251,11 @@ generate_RR_distrib = function (RR, low, sup, N) {          # N : number of rand
 # FUNCTION calc_HIA_replicate : Calculate HIA for each replicate
 #set.seed()
 calc_HIA_replicate = function(data, dis) {
-  params <- dis_setting(dis)                                                            # Parameters of diseases
+  params <- dis_setting(dis)                                                              # Parameters of diseases
       
   # Generate RR values for women and men
   rr_women <-  generate_RR_distrib (RR = params$rr_women, params$rr_women_lb, params$rr_women_ub, N=1)
-  if (dis %in% c("bc", "cc")) {                                                          # if disease is bc or cc
+  if (dis %in% c("bc", "cc")) {                                                           # if disease is bc or cc
     rr_men <- generate_RR_distrib (RR = params$rr_men, params$rr_men_lb, params$rr_men_ub, N=1)
   } else {
     rr_men <- rr_women
@@ -264,11 +264,11 @@ calc_HIA_replicate = function(data, dis) {
       
   dis_incidence_rate <- ifelse(dis=="mort", "mort_rate" , paste0(dis, "_incidence_rate"))
   dis_reduction_risk <- paste0(dis, "_reduction_risk")
-  data <-  reduc_incidence(data, dis_incidence_rate, dis_reduction_risk, dis)           # Reduced incidence
+  data <-  reduc_incidence(data, dis_incidence_rate, dis_reduction_risk, dis)             # Reduced incidence
       
-  data <- daly(data, dis)                                                               # DALY prevented         
+  data <- daly(data, dis)                                                                 # DALY prevented         
       
-  data <- medic_costs(data, dis)                                                        # Medical costs prevented
+  data <- medic_costs(data, dis)                                                          # Medical costs prevented
   
   return(data)
 }
