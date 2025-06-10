@@ -27,7 +27,8 @@ pacman :: p_load(
   here,         # Localization of files 
   dplyr,        # Data management
   srvyr,        # Survey
-  survey
+  survey,
+  ggplot2       # Data visualization
 )
 
 
