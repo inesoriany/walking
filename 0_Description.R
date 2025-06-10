@@ -83,7 +83,7 @@ jour <- emp_walkers %>%
   filter(pond_jour != "NA") %>% 
   as_survey_design(ids = ident_ind,
                    weights = pond_jour,
-                   strata = c(sexe, age_grp.x),
+                   strata = c(sexe, age_grp.x, quartile_rev, area_type),
                    nest = TRUE)
 
 # Survey design ponderated by individual
@@ -91,7 +91,7 @@ indiv <- emp_walkers %>%
   filter (pond_indc != "NA") %>% 
   as_survey_design(ids = ident_ind,
                    weights = pond_indc,
-                   strata = c(sexe, age_grp.x),
+                   strata = c(sexe, age_grp.x, quartile_rev, area_type),
                    nest = TRUE)
 
 
@@ -184,6 +184,9 @@ km_total_2019_IC <- as.numeric(confint(svytotal(~nbkm_walking, jour) *365.25/7 )
 km_total_2019 * 1e-9 # billion km
 km_total_2019_IC * 1e-9
 
+# In time Per person (min/pers/year)
+km_total_2019 / (pop_tot * walk_speed)
+
 
 ## Total walked distance per day in 2019
 km_total_day <- svytotal(~nbkm_walking, jour)                   # Total km per day
@@ -232,6 +235,8 @@ prop_walkers_km
 ggsave(here("output", "Plots", "Description", "plot_prop_walkers_km.png"), plot = prop_walkers_km)
 
 
+
+
 # Proportion of distances walked by each sex
 prop_sex <-  emp_walkers %>% 
   filter(pond_indc != "NA") %>% 
@@ -259,27 +264,31 @@ km_mean
 km_mean_IC <- confint(km_mean)
 km_mean_IC
 
+
 # In exposure time (min)
 km_mean * 60 / walk_speed
+
 
 
 # Mean walking distances per day, by age group
 svyby(~nbkm_walking, by = ~age_grp.x, jour, svymean, na.rm = T)
 
 
-# Mean walking distances per day, per age group and per sex
+
+#################################################################
+## Mean walking distances per day, per age group and per sex ----
 mean_distance_people <- svyby(~nbkm_walking, by = ~sexe + age_grp.x, jour, svymean, na.rm = T)
 
 
+# Plot : Mean walking distance by age group and sex
+zq <- qnorm(1-0.05/2)      # Level of confidence at 95%
 
-
-## Plot : Mean walking distance by age group and sex
 mean_distance_people <- jour %>% 
   group_by(sexe , age_grp.x) %>% 
   summarise(mean_distance = survey_mean(nbkm_walking, na.rm = TRUE)) %>% 
-  rename(sex = sexe)
+  rename(sex = sexe) 
 
-zq <- qnorm(1-0.05/2)      # Level of confidence at 95%
+
 
 mean_km_walkers = ggplot(mean_distance_people, aes(x = age_grp.x, y = mean_distance,
                                               ymin = mean_distance - zq*mean_distance_se, ymax = mean_distance + zq*mean_distance_se,
@@ -297,12 +306,52 @@ ggsave(here("output", "Plots", "Description", "plot_mean_km_walkers.png"), plot 
 
 
 
+  # T-test: Age difference
+anova_age <- svyglm(nbkm_walking ~ age_grp.x, jour)
+summary(anova_age)
 
+regTermTest(anova_age, ~ age_grp.x)
+      # p_value = 9.1508e-10                Walking distance varies by age group
+
+
+  # T-test: Sex difference 
+svyttest(nbkm_walking ~ sexe, jour)
+      # p-value = 0.08037                   Not statistically significant (>0.05) 
+
+
+
+
+  # T-test: Sex difference for each age category
+# test_t_sexe_age FUNCTION: Perform a T test for a given age category 
+test_t_sexe_age <- function(age_cat, design) {
+  sub_design <- subset(design, age_grp.x == age_cat)
+  test <- svyttest(nbkm_walking ~ sexe, design = sub_design)          # T-test bewteen sex 
+  
+  data.frame(
+    age_grp.x = age_cat,
+    statistic = test$statistic,
+    p_value = test$p.value
+  )
+}
+
+age_cat <- unique(jour$variables$age_grp.x)
+# T-test on sex for each age category
+test_sex_per_age <- do.call(bind_rows, lapply(age_cat, test_t_sexe_age, design = jour))
+
+
+
+
+
+#####################################################
 ## Walking levels per area ----
 mean_distance_area <- jour %>% 
   group_by(area_type) %>% 
   summarise(mean_distance = survey_mean(nbkm_walking, na.rm = TRUE)) %>% 
-  mutate(area_type = factor(area_type, levels = c("rural", "semi_urban", "urban", "paris")))
+  mutate(area_type = factor(area_type, levels = c("rural", "semi_urban", "urban"))) %>% 
+  mutate(
+    ic_lower = mean_distance - zq * mean_distance_se,
+    ic_upper = mean_distance + zq * mean_distance_se
+  )
 
 
 mean_km_area = ggplot(mean_distance_area, aes(x = area_type, y = mean_distance,
@@ -313,18 +362,15 @@ mean_km_area = ggplot(mean_distance_area, aes(x = area_type, y = mean_distance,
   scale_fill_manual(name = "Urban unit slices",
                     labels = c("rural" = "<5,000 inhabitants",
                               "semi_urban" = "<50,000 inhabitants",
-                              "urban"= "≥ 50,000 inhabitants",
-                              "paris" = "Paris"),
+                              "urban"= "≥ 50,000 inhabitants"),
                     values = c(
                       "rural" = "palegreen3",
                       "semi_urban" = "darkorange",
-                      "urban" = "firebrick2",
-                      "paris" = "slateblue"
+                      "urban" = "slateblue"
                     )) +
   scale_x_discrete(labels = c("rural" = "Rural",
                               "semi_urban" = "Semi-urban", 
-                              "urban" = "Urban",
-                              "paris" = "Paris")) +
+                              "urban" = "Urban")) +
   labs(x = "Area type",
        y = "Mean distance walked (km per day)") +
   theme_minimal()
@@ -334,13 +380,30 @@ plot(mean_km_area)
 ggsave(here("output", "Plots", "Description", "plot_mean_km_area.png"), plot = mean_km_area)
 
 
+  # T-test: Rural/urban difference
+sub_area <- subset(jour, area_type %in% c("rural", "urban"))
 
+test_area <- svyttest(nbkm_walking ~ area_type, design = sub_jour_area)
+test_area
+confint(test_area)
+
+
+
+
+
+
+
+###########################################################
 ## Walking levels per quartile of revenues ----
 mean_distance_rev <- jour %>% 
   group_by(quartile_rev) %>% 
   summarise(mean_distance = survey_mean(nbkm_walking, na.rm = TRUE)) %>% 
   mutate(quartile_rev = factor(quartile_rev,
-                               levels = c("1", "2", "3", "4")))
+                               levels = c("1", "2", "3", "4"))) %>% 
+  mutate(
+    ic_lower = mean_distance - zq * mean_distance_se,
+    ic_upper = mean_distance + zq * mean_distance_se
+  )
 
 
 mean_km_rev = ggplot(mean_distance_rev, aes(x = quartile_rev, y = mean_distance,
@@ -356,7 +419,7 @@ mean_km_rev = ggplot(mean_distance_rev, aes(x = quartile_rev, y = mean_distance,
                               "2" = "Q2", 
                               "3" = "Q3",
                               "4" = "Q4")) +
-  labs(x = "Revenue",
+  labs(x = "Income",
        y = "Mean distance walked (km per day)") +
   theme_minimal() +
   theme(legend.position = "none")
@@ -366,6 +429,13 @@ plot(mean_km_rev)
 ggsave(here("output", "Plots", "Description", "plot_mean_km_rev.png"), plot = mean_km_rev)
 
 
+  # T-test: Q1/Q4 difference
+sub_rev <- subset(jour, quartile_rev %in% c("1", "4"))
+sub_rev <- update(sub_rev, quartile_rev = factor(quartile_rev, levels = c("1", "4")))
+
+test_rev <- svyttest(nbkm_walking ~ quartile_rev, design = sub_rev)
+test_rev
+confint(test_rev)
 
 
 
@@ -406,15 +476,47 @@ nb_drivers_2km <- ggplot(drivers_2km, aes(x = age_grp.x, y = total,
                                             ymin = total - zq*total_se, ymax = total + zq*total_se, fill = Sex)) +
   geom_col(width = 0.7, position = position_dodge2(0.4))+
   geom_errorbar(position = position_dodge(0.7), width = 0.25) +
+  scale_fill_manual(values = c("Female" = "darkorange1",
+                               "Male" = "chartreuse4")) +
   ylab ("Number of drivers driving <2km in the past day") +
   xlab("Age group") +
   theme_minimal()
 plot(nb_drivers_2km)
 
+  # Export plot
+ggsave(here("output", "Plots", "Description", "plot_drivers_2km.png"), plot = drivers_2km)
 
 
 
-# Proportion of the French adult population reporting any short (<2km) car trip in the past day according to sex and age
+
+## Proportion of the French adult population reporting any shotrt (<2km) car trip 
+
+  # Number of total drivers
+tot_drivers <- short_drivers <- emp_drivers %>% 
+  filter(pond_jour != "NA", mdisttot_fin1 > 0) %>%   
+  as_survey_design(ids = ident_ind,
+                   weights = pond_jour) %>% 
+  summarise(total = survey_total(mdisttot_fin1, na.rm = TRUE))
+
+  # Number of drivers of short trips
+short_drivers <- emp_drivers %>% 
+  filter(pond_jour != "NA", mdisttot_fin1 > 0) %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_jour) %>% 
+  summarise(total = survey_total(mdisttot_fin1 <= 2, na.rm = TRUE)) 
+
+zq <- qnorm(0.975)  # pour IC à 95%
+
+perc_short_drivers <- short_drivers %>%
+  mutate(
+    prop = total / tot_drivers$total,
+    prop_se = total_se / tot_drivers$total,
+    ic_lower = prop - zq * prop_se,
+    ic_upper = prop + zq * prop_se
+  )
+
+
+## Proportion of the French adult population reporting any short (<2km) car trip in the past day according to sex and age
 mean_drivers_2km <- emp_drivers %>% 
   filter(pond_jour != "NA", mdisttot_fin1 > 0) %>% 
   as_survey_design(ids = ident_ind,
@@ -429,19 +531,21 @@ perc_drivers_2km <- ggplot(mean_drivers_2km, aes(x = age_grp.x, y = perc,
                                             ymin = perc - zq*perc_se, ymax = perc + zq*perc_se, fill = Sex)) +
   geom_col(width = 0.7, position = position_dodge2(0.4))+
   geom_errorbar(position = position_dodge(0.7), width = 0.25) +
+  scale_fill_manual(values = c("Female" = "darkorange1",
+                               "Male" = "chartreuse4")) +
   ylab ("% driving <2km in the past day") +
   xlab("Age group") +
   theme_minimal()
 plot(perc_drivers_2km)
 
   # Export plot
-ggsave(here("output", "Plots", "Description", "plot_drivers_2km.png"), plot = perc_drivers_2km)
+ggsave(here("output", "Plots", "Description", "plot_prop_drivers_2km.png"), plot = perc_drivers_2km)
 
 
 
 
-# Distribution of people reporting any short trips (mutually exclusive)
-short_trips <- emp_drivers %>%
+# Distribution of people reporting any short trips
+age_short_trips <- emp_drivers %>%
   as_survey_design(ids = ident_ind,
                    weights = pond_indc) %>% 
   mutate(class_dist = case_when(
@@ -470,16 +574,6 @@ ggsave(here("output", "Plots", "Description", "plot_drivers_shorttrips.png"), pl
 
 
 
-## Proportion of short car trips
-prop_short_trips <- emp_drivers %>%
-  summarise(
-    tot_km = sum(mdisttot_fin1, na.rm = TRUE),
-    tot_2km = sum(mdisttot_fin1[mdisttot_fin1 < 2], na.rm = TRUE),
-    proportion_short = tot_2km / tot_km)
-  
-export(prop_short_trips, here("output", "Tables", "Description", "prop_shorttrips.xlsx"))
-
-
 
 
 ##############################################################
@@ -487,15 +581,16 @@ export(prop_short_trips, here("output", "Tables", "Description", "prop_shorttrip
 ##############################################################
 
 # Mean distance driven (km) in the past day among those reporting short car trips <2km 
+zq <- qnorm(1-0.05/2)
+
 mean_short_trips <- emp_drivers %>% 
   filter(pond_jour !="NA", mdisttot_fin1 > 0, mdisttot_fin1 <= 2) %>% 
   as_survey_design(ids = ident_ind, 
                    weights = pond_jour) %>% 
-  summarise(day_mean = survey_mean(mdisttot_fin1, na.rm = TRUE))
+  summarise(day_mean = survey_mean(mdisttot_fin1, na.rm = TRUE)) %>% 
+  mutate(ic_lower = day_mean - zq * day_mean_se,
+         ic_upper = day_mean + zq * day_mean_se)
 
-
-mean_short_trips_IC <- confint(mean_short_trips$day_mean)
-mean_short_trips_IC 
 
 
 # Mean distance driven (km) in the past day among those reporting short car trips <2km according to sex and age
@@ -510,6 +605,8 @@ mean_drivers_2km <- emp_drivers %>%
 
 mean_km_drivers_2km <- ggplot(mean_drivers_2km, aes(x = age_grp.x, y = day_mean,
                                             ymin = day_mean - zq*day_mean_se, ymax = day_mean + zq*day_mean_se, fill = Sex)) +
+  scale_fill_manual(values = c("Female" = "darkorange1",
+                               "Male" = "chartreuse4")) +
   geom_col(width = 0.7, position = position_dodge2(0.4)) +
   geom_errorbar(position = position_dodge(0.7), width = 0.25) +
   ylab ("Mean length of short car travel <2km (km)") +
@@ -519,5 +616,9 @@ plot(mean_km_drivers_2km)
 
   # Export plot
 ggsave(here("output", "Plots", "Description", "plot_mean_drivers_2km.png"), plot = mean_km_drivers_2km)
+
+
+
+
 
 
