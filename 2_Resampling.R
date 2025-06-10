@@ -187,6 +187,11 @@ outcome_vec <- c("tot_cases", "tot_daly", "tot_medic_costs", "tot_soc_costs")
 set.seed(123)
 HIA_disease <- HIA_burden_IC(burden_disease, dis_vec, outcome_vec, calc_replicate_IC)
 
+  # Export
+export(HIA_disease, here("output", "RDS", "HIA_disease_1000replicate.rds"))
+
+
+
   # OTHER VISUALIZATION
 HIA_per_disease <- data.frame(disease = HIA_disease[["disease"]])
 for (out in outcome_vec){
