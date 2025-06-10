@@ -189,7 +189,9 @@ for (dis in dis_vec) {
             tot_daly = sum(tot_daly),
             tot_daly_se = sum(tot_daly_se),
             tot_medic_costs = sum(tot_medic_costs) / 1e6,
-            tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
+            tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6,
+            tot_soc_costs = sum(tot_daly * vsl * 1e-6),
+            tot_soc_costs_se = sum(tot_daly_se * vsl * 1e-6))
   assign(paste0(dis, "_shift"), dis_shift)
 }
 
@@ -572,6 +574,34 @@ CO2_shift
 ggsave(here("output", "Plots", "Linear", "Modal shift", "modalshift_CO2_emit.png"), plot = CO2_shift)
 
 
+
+##############################################################
+#                      NUMBER OF DRIVERS                     #
+##############################################################
+nb_short_drivers <-  data.frame()
+
+for (dist in dist_vec) {
+  drivers_dist <- emp_drive %>% 
+    filter(!is.na(mdisttot_fin1) & mdisttot_fin1 <= dist)                             # Select the drivers under this distance
+
+  tot_short_drivers <- sum(drivers_dist$pond_indc)
+  
+  for (perc in perc_vec) {
+    sample_drivers <- drivers_dist %>% 
+      slice_sample(prop = perc)
+    
+    sample_short_drivers <- sum(sample_drivers$pond_indc)
+    
+    prop_short_drivers <- sample_short_drivers / tot_short_drivers
+    
+    nb_short_drivers <- bind_rows(nb_short_drivers, 
+                                  data.frame(
+                                    distance = dist,
+                                    percentage = perc,
+                                    nb_shifted_drivers = sample_short_drivers,
+                                    prop_short_drivers = prop_short_drivers))
+  }
+}
 
 
 
