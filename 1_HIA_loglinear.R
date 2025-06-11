@@ -638,9 +638,9 @@ for (dis in dis_vec) {
 
 # Gather results with IC
 burden_step_IC <- burden_step %>% 
-  mutate(low_cases = burden_step_lb[,2], sup_cases = burden_step_ub[,2],
-         low_daly = burden_step_lb[,4], sup_daly = burden_step_ub[,4],
-         low_medic_costs = burden_step_lb[,6], sup_medic_costs = burden_step_ub[,6])
+  mutate(low_cases = burden_step_lb[,1], sup_cases = burden_step_ub[,1],
+         low_daly = burden_step_lb[,3], sup_daly = burden_step_ub[,3],
+         low_medic_costs = burden_step_lb[,5], sup_medic_costs = burden_step_ub[,5])
 
 
 
@@ -648,7 +648,7 @@ burden_step_IC <- burden_step %>%
 ## SOCIAL COSTS (intangible)----
 # Add social costs (in euros)
 burden_step_IC <- burden_step_IC %>% 
-  mutate(tot_soc_costs = tot_daly*vsl,
+  mutate(tot_soc_costs = tot_daly*vsl,            
          low_soc_costs = low_daly*vsl,
          sup_soc_costs = sup_daly*vsl)
 
