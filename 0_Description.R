@@ -306,12 +306,12 @@ ggsave(here("output", "Plots", "Description", "plot_mean_km_walkers.png"), plot 
 
 
 
-  # T-test: Age difference
+  # Test Anova: Age difference
 anova_age <- svyglm(nbkm_walking ~ age_grp.x, jour)
 summary(anova_age)
 
 regTermTest(anova_age, ~ age_grp.x)
-      # p_value = 9.1508e-10                Walking distance varies by age group
+      # p_value = 9.1508e-10                Highly significant (p<0.001)
 
 
   # T-test: Sex difference 
@@ -325,7 +325,7 @@ svyttest(nbkm_walking ~ sexe, jour)
 # test_t_sexe_age FUNCTION: Perform a T test for a given age category 
 test_t_sexe_age <- function(age_cat, design) {
   sub_design <- subset(design, age_grp.x == age_cat)
-  test <- svyttest(nbkm_walking ~ sexe, design = sub_design)          # T-test bewteen sex 
+  test <- svyttest(nbkm_walking ~ sexe, design = sub_design)          # T-test between sex 
   
   data.frame(
     age_grp.x = age_cat,
@@ -380,12 +380,12 @@ plot(mean_km_area)
 ggsave(here("output", "Plots", "Description", "plot_mean_km_area.png"), plot = mean_km_area)
 
 
-  # T-test: Rural/urban difference
-sub_area <- subset(jour, area_type %in% c("rural", "urban"))
+  # Test Anova
+anova_area <- svyglm(nbkm_walking ~ area_type, jour)
+summary(anova_area)
 
-test_area <- svyttest(nbkm_walking ~ area_type, design = sub_jour_area)
-test_area
-confint(test_area)
+regTermTest(anova_area, ~ area_type)
+# p_value = 3.6767e-12                 Highly significant (p<0.0001)
 
 
 
@@ -429,13 +429,12 @@ plot(mean_km_rev)
 ggsave(here("output", "Plots", "Description", "plot_mean_km_rev.png"), plot = mean_km_rev)
 
 
-  # T-test: Q1/Q4 difference
-sub_rev <- subset(jour, quartile_rev %in% c("1", "4"))
-sub_rev <- update(sub_rev, quartile_rev = factor(quartile_rev, levels = c("1", "4")))
+  # Test Anova
+anova_rev <- svyglm(nbkm_walking ~ quartile_rev, jour)
+summary(anova_rev)
 
-test_rev <- svyttest(nbkm_walking ~ quartile_rev, design = sub_rev)
-test_rev
-confint(test_rev)
+regTermTest(anova_rev, ~ quartile_rev)
+# p_value = 4.0731e-07                  Highly significant (p<0.0001)
 
 
 
