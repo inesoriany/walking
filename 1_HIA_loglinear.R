@@ -695,9 +695,9 @@ for (dis in dis_vec) {
 
 # Gather results with IC
 burden_sex_step_IC <- burden_sex_step %>% 
-  mutate(low_cases = burden_sex_step_lb[,2], sup_cases = burden_sex_step_ub[,2],
-         low_daly = burden_sex_step_lb[,4], sup_daly = burden_sex_step_ub[,4],
-         low_medic_costs = burden_sex_step_lb[,6], sup_medic_costs = burden_sex_step_ub[,6])
+  mutate(low_cases = burden_sex_step_lb[,1], sup_cases = burden_sex_step_ub[,1],
+         low_daly = burden_sex_step_lb[,3], sup_daly = burden_sex_step_ub[,3],
+         low_medic_costs = burden_sex_step_lb[,5], sup_medic_costs = burden_sex_step_ub[,5])
 
 
 
