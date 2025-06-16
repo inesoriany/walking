@@ -15,6 +15,8 @@
 
 # Files outputted :
   # HIA_modal_shift_100replicate.xlsx : HIA for each scenario of modal shift
+  # Mortality_modal_shift_100replicate.xlsx : Premature deaths prevented for modal shift scenarios
+  # Morbidity_modal_shift_100replicate.xlsx : Chronic diseases prevented for modal shift scenarios
   # plot_modalshift_cases_prevented.png : Total of prevented cases depending on different scenarios of modal shift
   # plot_modalshift_daly_prevented.png : DALY prevented
   # plot_modalshift_costs_saved.png : Saved medical costs
@@ -201,6 +203,10 @@ for (dis in dis_vec) {
 }
 
 calc_replicate_IC(mort_shift[10,], "tot_cases")     # Scenario 50% <1km
+calc_replicate_IC(mort_shift[10,], "tot_daly")      # Scenario 50% <1km
+
+  # Export HIA for mortality
+export(mort_shift, here("output", "Tables", "Log linear", "Modal shift", "Mortality_modal_shift_100replicate.xlsx"))
 
 
 # MORBIDITY
@@ -215,6 +221,10 @@ morbidity_shift <- burden_tot %>%
             tot_medic_costs_se = sum(tot_medic_costs_se) / 1e6)
 
 calc_replicate_IC(morbidity_shift[10,], "tot_cases")     # Scenario 50% <1km
+calc_replicate_IC(morbidity_shift[10,], "tot_daly")      # Scenario 50% <1km
+
+  # Export HIA for morbidity
+export(morbidity_shift, here("output", "Tables", "Log linear", "Modal shift", "Morbidity_modal_shift_100replicate.xlsx"))
 
 
 
