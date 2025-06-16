@@ -1,4 +1,4 @@
-###############################################
+##############################################
 ################ DESCRIPTION #################
 ##############################################
 
@@ -541,6 +541,22 @@ plot(perc_drivers_2km)
 ggsave(here("output", "Plots", "Description", "plot_prop_drivers_2km.png"), plot = perc_drivers_2km)
 
 
+# Survey design for statistical test
+
+# Test Anova: Age difference
+anova_age_drivers <- svyglm(perc ~ age_grp.x, )
+summary(anova_age_drivers)
+
+regTermTest(anova_age_drivers, ~ age_grp.x)
+# p_value =                 Highly significant (p<0.001)
+
+
+# T-test: Sex difference 
+svyttest(perc ~ Sex, )
+# p-value =                    Not statistically significant (>0.05) 
+
+
+
 
 
 # Distribution of people reporting any short trips
@@ -559,7 +575,7 @@ age_short_trips <- emp_drivers %>%
 
   # Plot : Distribution of people reporting any short trips (mutually exclusive)
 zq <- qnorm(1-0.05/2)
-short_trips_2km <- ggplot(short_trips, aes(x = class_dist, y = tot_drivers,
+short_trips_2km <- ggplot(age_short_trips, aes(x = class_dist, y = tot_drivers,
                                                ymin = tot_drivers - zq*tot_drivers_se, ymax = tot_drivers + zq*tot_drivers_se)) +
   geom_col(width = 0.9) +
   geom_errorbar(position = position_dodge(0.7), width = 0.25) +
@@ -569,7 +585,6 @@ short_trips_2km <- ggplot(short_trips, aes(x = class_dist, y = tot_drivers,
 plot(short_trips_2km)
 
 ggsave(here("output", "Plots", "Description", "plot_drivers_shorttrips.png"), plot = short_trips_2km)
-
 
 
 
@@ -615,9 +630,6 @@ plot(mean_km_drivers_2km)
 
   # Export plot
 ggsave(here("output", "Plots", "Description", "plot_mean_drivers_2km.png"), plot = mean_km_drivers_2km)
-
-
-
 
 
 
