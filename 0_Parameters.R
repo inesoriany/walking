@@ -76,9 +76,9 @@ rr_dep_men_ub <- 0.85
 
 # mortality (Kelly et al.) 
 ref_mort = ref_mort_m =ref_mort_w <- 168                         # 168 minutes per week for walking
-rr_mort_lb=  rr_mort_men_lb =rr_mort_women_lb<-.83         
-rr_mort = rr_mort_men=  rr_mort_women<- .89
-rr_mort_ub =rr_mort_men_ub =rr_mort_women_ub <-.96
+rr_mort_lb=  rr_mort_men_lb =rr_mort_women_lb<-.85         
+rr_mort = rr_mort_men=  rr_mort_women<- .90
+rr_mort_ub =rr_mort_men_ub =rr_mort_women_ub <-.95
 
 
 
