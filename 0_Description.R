@@ -137,7 +137,7 @@ for(dis in dis_vec) {
                              color = .data[["sexe"]]), 
                size = 1, alpha = 0.5) +
     
-    geom_smooth(data = emp_walkers, 
+    geom_line(data = emp_walkers, 
                 mapping = aes(x = .data[["age_grp.x"]],
                               y = .data[[paste0(dis, "_incidence")]],
                               group = .data[["sexe"]],
