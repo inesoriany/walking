@@ -76,7 +76,7 @@ for (dis in dis_vec) {
 
 
   # Export the results of HIA outputs for all replications per age group
-export(burden_replicate_age, here("output", "RDS", "HIA_1000replicate_per_age.rds"))
+export(burden_replicate_age, here("output", "RDS", "2019", "Resampling", "HIA_1000replicate_per_age.rds"))
 
 
 
@@ -90,7 +90,7 @@ for (dis in dis_vec) {
 }
 
   # Export the results of HIA outputs for all replications
-export(burden_replicate, here("output", "RDS", "HIA_1000replicate.rds"))
+export(burden_replicate, here("output", "RDS", "2019", "Resampling", "HIA_1000replicate.rds"))
 
 
 
@@ -100,7 +100,7 @@ export(burden_replicate, here("output", "RDS", "HIA_1000replicate.rds"))
 ################################################################################################################################
 
 # IMPORT DATA (to avoid re-generating Monte-Carlo replications)
-burden_replicate <- import(here("output", "RDS", "HIA_1000replicate.rds"))
+burden_replicate <- import(here("output", "RDS", "2019", "Resampling", "HIA_1000replicate.rds"))
 
 
 ##############################################################
@@ -188,7 +188,7 @@ set.seed(123)
 HIA_disease <- HIA_burden_IC(burden_disease, dis_vec, outcome_vec, calc_replicate_IC)
 
   # Export
-export(HIA_disease, here("output", "RDS", "HIA_disease_1000replicate.rds"))
+export(HIA_disease, here("output", "RDS", "2019", "Resampling", "HIA_disease_1000replicate.rds"))
 
 
 
@@ -200,7 +200,7 @@ for (out in outcome_vec){
 }
 
   # Export results 
-export(HIA_per_disease, here("output", "Tables", "Linear", "HIA_per_disease.xlsx"))
+export(HIA_per_disease, here("output", "Tables", "Linear", "2019", "Resampling", "HIA_per_disease.xlsx"))
 
 
 
@@ -216,7 +216,7 @@ for (out in outcome_vec){
 }
 
   # Export results 
-export(HIA_per_disease_Rubin, here("output", "Tables", "Linear", "HIA_per_disease_Rubin.xlsx"))
+export(HIA_per_disease_Rubin, here("output", "Tables", "Linear", "2019", "Resampling", "HIA_per_disease_Rubin.xlsx"))
 
 
 
@@ -252,7 +252,7 @@ for (out in outcome_vec){
 }
 
   # Export results 
-export(HIA_all_disease, here("output", "Tables", "Linear", "HIA_global.xlsx"))
+export(HIA_all_disease, here("output", "Tables", "Linear", "2019", "Resampling", "HIA_global.xlsx"))
 
 
 
@@ -267,7 +267,7 @@ for (out in outcome_vec){
 }
 
   # Export results 
-export(HIA_all_disease_Rubin, here("output", "Tables", "Linear", "HIA_global_Rubin.xlsx"))
+export(HIA_all_disease_Rubin, here("output", "Tables", "Linear", "2019", "Resampling", "HIA_global_Rubin.xlsx"))
 
 
 
@@ -291,11 +291,11 @@ for (i in 1:N) {
   reduc_mortality_risk <- bind_rows(reduc_mortality_risk, burden_mort)
 }
 # Export reduction in mortality risk for 1000 replications
-export(reduc_mortality_risk, here("output", "RDS",  "reduc_mortality_risk_1000_rep.RDS"))
+export(reduc_mortality_risk, here("output", "RDS",  "2019", "Resampling", "reduc_mortality_risk_1000_rep.RDS"))
 
 
 # IC
-reduc_mortality_risk <- import(here("output", "RDS",  "reduc_mortality_risk_1000_rep.RDS"))
+reduc_mortality_risk <- import(here("output", "RDS",  "2019", "Resampling", "reduc_mortality_risk_1000_rep.RDS"))
 
 N = 1000
 IC <-  calc_replicate_IC(reduc_mortality_risk, "mean_mort_reduction_risk")
@@ -305,7 +305,7 @@ reduc_mortality_risk_IC <- data.frame(
 )
 
 # Export reduction in mortality risk due to walking
-export(reduc_mortality_risk_IC, here("output", "Tables", "Linear", "reduc_mortality_risk.xlsx"))
+export(reduc_mortality_risk_IC, here("output", "Tables", "Linear", "2019", "Resampling", "reduc_mortality_risk.xlsx"))
 
 
 
@@ -357,7 +357,7 @@ unit_value_2019 <- as.data.frame(t(quantile(unit_2019, probs = c(0.025, 0.5, 0.9
 
 
 # Export : economic value of 1 km walked per scenario
-export(unit_value_2019, here("output", "Tables", "Linear", "1km_value_1000replicate.xlsx"))
+export(unit_value_2019, here("output", "Tables", "Linear", "2019", "Resampling", "1km_value_1000replicate.xlsx"))
 
 
 
@@ -374,7 +374,7 @@ unit_soc_value_2019 <- as.data.frame(t(quantile(unit_soc_2019, probs = c(0.025, 
 
 
 # Export : economic value of 1 km walked per scenario
-export(unit_soc_value_2019, here("output", "Tables", "Linear", "1km_soc_value_1000replicate.xlsx"))
+export(unit_soc_value_2019, here("output", "Tables", "Linear", "2019", "Resampling", "1km_soc_value_1000replicate.xlsx"))
 
 
 
@@ -406,7 +406,7 @@ euro_unit_duration_2019<- euro_unit_2019 %>%
 
 
 # Export : Calculate distance and duration to save 1€ of medical costs in 2019
-export(euro_unit_duration_2019, here("output", "Tables", "Linear", "1€_km_duration_1000replicate.xlsx"))
+export(euro_unit_duration_2019, here("output", "Tables", "Linear", "2019", "Resampling", "1€_km_duration_1000replicate.xlsx"))
 
 
 
@@ -434,7 +434,7 @@ soc_euro_unit_duration_2019<- soc_euro_unit_2019 %>%
 
 
 # Export : Calculate distance and duration to save 1€ of medical costs in 2019
-export(soc_euro_unit_duration_2019, here("output", "Tables", "Linear", "soc_1€_km_duration_1000replicate.xlsx"))
+export(soc_euro_unit_duration_2019, here("output", "Tables", "Linear", "2019", "Resampling", "soc_1€_km_duration_1000replicate.xlsx"))
 
 
 
@@ -446,7 +446,7 @@ export(soc_euro_unit_duration_2019, here("output", "Tables", "Linear", "soc_1€
 ################################################################################################################################
 
 # IMPORT DATA (to avoid re-generating Monte-Carlo replications)
-burden_replicate_age <- import(here("output","RDS", "HIA_1000replicate_per_age.rds"))
+burden_replicate_age <- import(here("output","RDS", "2019", "Resampling", "HIA_1000replicate_per_age.rds"))
 
 
 # Mean value for each outcome per disease of random sampled value (no need)
