@@ -1,6 +1,6 @@
 #################################################
 ############ HEALTH IMPACT ASSESSMENT ###########
-############    linear regression     ###########
+###########    Log linear regression    #########
 #################################################
 
 # Files needed :
@@ -9,14 +9,33 @@
 
 
 # Files outputted :
+
+## HIA 2019:
   # plot_prevented_cases.png : Diseases cases prevented per sex by walking in 2019 
   # HIA_walking_2019.xlsx : Cases, daly, costs (medical + social) prevented by walking in 2019
   # plot_deaths_prevented.png : Deaths prevented per sex by walking in 2019
   # plot_YLL_prevented.png : YLL prevented per sex by walking in 2019 
   # 1€_km_duration.xlsx : Distance and duration that saved 1€ in 2019
 
+## HIA 10,000 steps:
+  # HIA_10000steps.xlsx
+  # HIA_sex_10000steps.xlsx
   # plot_cases_step.png : Benefits it we walk 10 000 steps
   
+## HIA WHO RECO 168 min:
+  # HIA_WHOreco.xlsx
+  # HIA_add_WHOreco.xlsx : Additional benefits
+  # HIA_sex_WHOreco.xlsx
+  # HIA_add_sex_WHOreco.xlsx : Additional benefits
+
+
+
+
+###########################################################################################################################################################################
+###########################################################################################################################################################################
+#                                                                          HIA - 2019                                                                                     #
+###########################################################################################################################################################################
+###########################################################################################################################################################################
 
 
 ################################################################################################################################
@@ -127,9 +146,9 @@ for(dis in dis_vec) {
 
 # Gather results with IC
 burden_IC <- burden %>% 
-  mutate(low_cases = burden_lb[,1], sup_cases = burden_ub[,1],
-         low_daly = burden_lb[,3], sup_daly = burden_ub[,3],
-         low_medic_costs = burden_lb[,5], sup_medic_costs = burden_ub[,5])
+  mutate(low_cases = burden_lb[,"tot_cases"], sup_cases = burden_ub[,"tot_cases"],
+         low_daly = burden_lb[,"tot_daly"], sup_daly = burden_ub[,"tot_daly"],
+         low_medic_costs = burden_lb[,"tot_medic_costs"], sup_medic_costs = burden_ub[,"tot_medic_costs"])
 
 
 
@@ -151,12 +170,19 @@ burden_IC <- burden_IC %>%
          tot_cases, tot_cases_se, low_cases, sup_cases,
          tot_daly, tot_daly_se, low_daly, sup_daly,
          tot_medic_costs, tot_medic_costs_se, low_medic_costs, sup_medic_costs,
-         tot_soc_costs, low_soc_costs, sup_soc_costs)
-
+         tot_soc_costs, low_soc_costs, sup_soc_costs) %>% 
+  mutate(disease = recode_factor(disease, 
+                                 bc = "Breast cancer", 
+                                 cc="Colon cancer" , 
+                                 cvd ="CVD" , 
+                                 dem ="Dementia",
+                                 diab2 ="T2 Diabetes" , 
+                                 dep = "Depression",
+                                 mort ="Mortality")) 
 
 
 # Export HIA : total of prevented cases, DALY and saved costs per disease
-export(burden_IC, here("output", "Tables", "Log linear", "HIA_walking_2019.xlsx"))
+export(burden_IC, here("output", "Tables", "Log linear", "Main analysis", "HIA_walking_2019.xlsx"))
 
 
 
@@ -191,14 +217,6 @@ burden_sex_age_IC <- burden_sex_age %>%
 
   # Rename columns and variable
 burden_sex_age_IC <-  burden_sex_age_IC %>% 
-  mutate(disease = recode_factor(disease, 
-                                 bc = "Breast cancer", 
-                                 cc="Colon cancer" , 
-                                 cvd ="CVD" , 
-                                 dem ="Dementia",
-                                 diab2 ="T2 Diabetes" , 
-                                 dep = "Depression",
-                                 mort ="Mortality")) %>% 
   rename(Sex = sexe)
 
 
@@ -218,7 +236,7 @@ burden_sex_IC <- burden_sex_age_IC %>%
             sup_medic_costs = sum(sup_medic_costs, na.rm = T))
 
   # Export HIA per sex : total of prevented cases, DALY and saved costs per disease
-export(burden_sex_IC, here("output", "Tables", "Log linear", "HIA_sex_walking_2019.xlsx"))
+export(burden_sex_IC, here("output", "Tables", "Log linear", "Main analysis", "HIA_sex_walking_2019.xlsx"))
 
 
 # Plot : Cases prevented by walking in 2019 according to sex 
@@ -233,7 +251,7 @@ cases_prevented <- ggplot(burden_sex_IC, aes(x = disease, y = tot_cases, ymin = 
 cases_prevented
 
   # Export plot
-ggsave(here("output", "Plots", "Log linear", "plot_cases_prevented.png"), plot = cases_prevented)
+ggsave(here("output", "Plots", "Log linear", "Main analysis", "plot_cases_prevented.png"), plot = cases_prevented)
 
 
 
@@ -268,7 +286,7 @@ daly_prevented <- ggplot(burden_age_IC, aes(x = age_grp.x, y = tot_daly, fill = 
 daly_prevented
 
   #Export plot
-ggsave(here("output", "Plots", "Log linear", "plot_DALY_prevented.png"), plot = daly_prevented)
+ggsave(here("output", "Plots", "Log linear", "Main analysis", "plot_DALY_prevented.png"), plot = daly_prevented)
 
 
 
@@ -327,7 +345,7 @@ cases_prevented_rev <- ggplot(burden_rev_IC, aes(x = disease, y = tot_cases, ymi
 cases_prevented_rev
 
 #Export plot
-ggsave(here("output", "Plots", "Log linear", "plot_cases_per_rev.png"), plot = cases_prevented_rev)
+ggsave(here("output", "Plots", "Log linear", "Main analysis", "plot_cases_per_rev.png"), plot = cases_prevented_rev)
 
 
 
@@ -386,7 +404,7 @@ deaths_prevented <- ggplot(prevented_death, aes(x = age_grp.x, y = tot_cases, ym
 deaths_prevented
 
 # Export plot
-ggsave(here("output", "Plots", "Log linear", "plot_deaths_prevented.png"), plot = deaths_prevented)
+ggsave(here("output", "Plots", "Log linear", "Main analysis", "plot_deaths_prevented.png"), plot = deaths_prevented)
 
 
 
@@ -408,7 +426,7 @@ YLL_prevented <- ggplot(prevented_death, aes(x = age_grp.x, y = tot_daly, ymin =
 YLL_prevented
 
 # Export plot : YLL prevented per sex by walking in 2019 
-ggsave(here("output", "Plots", "Log linear", "plot_YLL_prevented.png"), plot = YLL_prevented)
+ggsave(here("output", "Plots", "Log linear", "Main analysis", "plot_YLL_prevented.png"), plot = YLL_prevented)
 
 
 
@@ -459,7 +477,7 @@ unit_soc_value_2019 <- as.data.frame(t(quantile(unit_soc_2019, probs = c(0.025, 
 
     
 # Export : economic value of 1 km walked per scenario
-export(unit_soc_value_2019, here("output", "Tables", "Log linear", "1km_soc_value.xlsx"))
+export(unit_soc_value_2019, here("output", "Tables", "Log linear", "Main analysis", "1km_soc_value.xlsx"))
 
 
 
@@ -490,7 +508,7 @@ euro_unit_duration_2019<- euro_unit_2019 %>%
 
 
 # Export : Calculate distance and duration to save 1€ of medical costs in 2019
-export(euro_unit_duration_2019, here("output", "Tables", "Log linear", "1€_km_duration.xlsx"))
+export(euro_unit_duration_2019, here("output", "Tables", "Log linear", "Main analysis", "1€_km_duration.xlsx"))
 
 
 
@@ -518,7 +536,7 @@ soc_euro_unit_duration_2019<- soc_euro_unit_2019 %>%
 
 
 # Export : Calculate distance and duration to save 1€ of medical costs in 2019
-export(soc_euro_unit_duration_2019, here("output", "Tables", "Log linear", "soc_1€_km_duration.xlsx"))
+export(soc_euro_unit_duration_2019, here("output", "Tables", "Log linear", "Main analysis", "soc_1€_km_duration.xlsx"))
 
 
 
@@ -670,7 +688,7 @@ burden_step_IC <- burden_step_IC %>%
 
 
 # Export HIA : total of prevented cases, DALY and saved costs per disease
-export(burden_step_IC, here("output", "Tables", "Log linear", "HIA_10000steps.xlsx"))
+export(burden_step_IC, here("output", "Tables", "Log linear","10000 steps", "HIA_10000steps.xlsx"))
 
 
 ##############################################################
@@ -730,7 +748,7 @@ burden_sex_step_IC <- burden_sex_step_IC %>%
 
 
 # Export HIA : total of prevented cases, DALY and saved costs per disease
-export(burden_sex_step_IC, here("output", "Tables", "Log linear", "HIA_sex_10000steps.xlsx"))
+export(burden_sex_step_IC, here("output", "Tables", "Log linear", "10000 steps", "HIA_sex_10000steps.xlsx"))
 
 
 
@@ -776,7 +794,7 @@ cases_prevented_step
 
 
 # Export plot
-ggsave(here("output", "Plots", "Log linear", "plot_cases_10000step.png"), plot = cases_prevented_step)
+ggsave(here("output", "Plots", "Log linear", "10000 steps", "plot_cases_10000step.png"), plot = cases_prevented_step)
 
 
 
@@ -817,6 +835,333 @@ sum(morbidity_step_IC[["tot_cases"]]) / sum(morbidity_burden_IC[["tot_cases"]])
 # Mortality
 mortality_step_IC[["tot_cases"]] / mortality_burden_IC[["tot_cases"]]
 
+
+
+
+
+
+
+###########################################################################################################################################################################
+###########################################################################################################################################################################
+#                                                                  HIA - WHO RECOMMENDATION (168 MIN)                                                                     #
+###########################################################################################################################################################################
+###########################################################################################################################################################################
+
+
+
+
+################################################################################################################################
+#                                                     1. IMPORT DATA                                                           #
+################################################################################################################################
+
+emp_WHO <- import(here("data_clean", "EMP_walkers.xlsx"))
+
+
+
+################################################################################################################################
+#                                                       2. DATASET                                                             #
+################################################################################################################################
+
+# Week time spent if people walk 168 min a day
+week_time_WHO <- 168
+
+emp_WHO <- emp_WHO %>% 
+  mutate(week_time = week_time_WHO)
+
+
+################################################################################################################################
+#                                               3. HEALTH IMPACT ASSESSMENT                                                    #
+################################################################################################################################
+
+# Initialization
+health_WHO <- emp_WHO
+health_WHO_ub <- emp_WHO
+health_WHO_lb <- emp_WHO
+
+
+# HIA calculation
+HIA_WHO <- log_calc_HIA(data = health_WHO,
+                         data_ub = health_WHO_ub,
+                         data_lb = health_WHO_lb,
+                         params = params,
+                         dis_vec = dis_vec)
+
+health_WHO      <- HIA_WHO$data
+health_WHO_ub   <- HIA_WHO$data_ub
+health_WHO_lb   <- HIA_WHO$data_lb
+
+
+
+##############################################################
+#                      HIA OUTCOMES                          #     with cases, DALY and medical costs
+##############################################################
+
+# Survey design ----
+surv_dis_WHO <- health_WHO %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),           # by sex and age group
+                   nest = TRUE)
+# IC
+# Upper bound
+surv_dis_WHO_ub <- health_WHO_ub %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),           
+                   nest = TRUE)
+
+# Lower bound
+surv_dis_WHO_lb <- health_WHO_lb %>% 
+  as_survey_design(ids = ident_ind,
+                   weights = pond_indc,
+                   strata = c(sexe, age_grp.x),      
+                   nest = TRUE)
+
+
+##############################################################
+#                         DISEASES                           #
+##############################################################
+
+## Total of prevented cases, DALY and saved costs, for each disease, had the 2019 French adult population followed WHO recommendation ----
+burden_WHO <- data.frame()
+burden_WHO_ub <- data.frame()
+burden_WHO_lb <- data.frame()
+for (dis in dis_vec) {
+  dis_burden_WHO <- burden_prevented(surv_dis_WHO, dis, NULL)
+  burden_WHO <- bind_rows(burden_WHO, dis_burden_WHO) 
+  
+  dis_burden_WHO_ub <- burden_prevented(surv_dis_WHO_ub, dis, NULL)
+  burden_WHO_ub <- bind_rows(burden_WHO_ub, dis_burden_WHO_ub) 
+  
+  dis_burden_WHO_lb <- burden_prevented(surv_dis_WHO_lb, dis, NULL)
+  burden_WHO_lb <- bind_rows(burden_WHO_lb, dis_burden_WHO_lb) 
+}
+
+
+# Gather results with IC
+burden_WHO_IC <- burden_WHO %>% 
+  mutate(low_cases = burden_WHO_lb[,1], sup_cases = burden_WHO_ub[,1],
+         low_daly = burden_WHO_lb[,3], sup_daly = burden_WHO_ub[,3],
+         low_medic_costs = burden_WHO_lb[,5], sup_medic_costs = burden_WHO_ub[,5])
+
+
+
+
+# SOCIAL COSTS (intangible)----
+  # Add social costs (in euros)
+burden_WHO_IC <- burden_WHO_IC %>% 
+  mutate(tot_soc_costs = tot_daly*vsl,            
+         low_soc_costs = low_daly*vsl,
+         sup_soc_costs = sup_daly*vsl)
+
+  # Reorganize columns
+burden_WHO_IC <- burden_WHO_IC %>% 
+  select(disease,
+         tot_cases, tot_cases_se, low_cases, sup_cases,
+         tot_daly, tot_daly_se, low_daly, sup_daly,
+         tot_medic_costs, tot_medic_costs_se, low_medic_costs, sup_medic_costs,
+         tot_soc_costs, low_soc_costs, sup_soc_costs) %>% 
+  mutate(disease = recode_factor(disease, 
+                                 bc = "Breast cancer", 
+                                 cc="Colon cancer" , 
+                                 cvd ="CVD" , 
+                                 dem ="Dementia",
+                                 diab2 ="T2 Diabetes" , 
+                                 dep = "Depression",
+                                 mort ="Mortality")) 
+
+
+# Export HIA : total of prevented cases, DALY and saved costs per disease
+export(burden_WHO_IC, here("output", "Tables", "Log linear", "WHO reco", "HIA_WHOreco.xlsx"))
+
+
+
+
+## Additional prevented cases, DALY and saved costs, for each disease ----
+add_burden_WHO_IC <- burden_WHO_IC %>%
+  mutate(across(
+    where(is.numeric),
+    ~ . - burden_IC[[cur_column()]]
+  ))
+
+# Export additional HIA : additional prevented cases, DALY and saved costs per disease
+export(add_burden_WHO_IC, here("output", "Tables", "Log linear", "WHO reco", "HIA_add_WHOreco.xlsx"))
+
+
+
+
+
+
+##############################################################
+#                             SEX                            #
+##############################################################
+
+# HIA according to sex ----
+burden_sex_WHO <- data.frame()
+burden_sex_WHO_ub <- data.frame()
+burden_sex_WHO_lb <- data.frame()
+for (dis in dis_vec) {
+  dis_burden_sex_WHO <- burden_prevented(surv_dis_WHO, dis, "sexe")
+  burden_sex_WHO <- bind_rows(burden_sex_WHO, dis_burden_sex_WHO) 
+  
+  dis_burden_sex_WHO_ub <- burden_prevented(surv_dis_WHO_ub, dis, "sexe")
+  burden_sex_WHO_ub <- bind_rows(burden_sex_WHO_ub, dis_burden_sex_WHO_ub) 
+  
+  dis_burden_sex_WHO_lb <- burden_prevented(surv_dis_WHO_lb, dis, "sexe")
+  burden_sex_WHO_lb <- bind_rows(burden_sex_WHO_lb, dis_burden_sex_WHO_lb) 
+}
+
+
+# Gather results with IC
+burden_sex_WHO_IC <- burden_sex_WHO %>% 
+  mutate(low_cases = burden_sex_WHO_lb[,"tot_cases"], sup_cases = burden_sex_WHO_ub[,"tot_cases"],
+         low_daly = burden_sex_WHO_lb[,"tot_daly"], sup_daly = burden_sex_WHO_ub[,"tot_daly"],
+         low_medic_costs = burden_sex_WHO_lb[,"tot_medic_costs"], sup_medic_costs = burden_sex_WHO_ub[,"tot_medic_costs"])
+
+
+
+
+## SOCIAL COSTS (intangible)----
+# Add social costs
+burden_sex_WHO_IC <- burden_sex_WHO_IC %>% 
+  mutate(tot_soc_costs = tot_daly*vsl,
+         low_soc_costs = low_daly*vsl,
+         sup_soc_costs = sup_daly*vsl)
+
+# Reorganize columns
+burden_sex_WHO_IC <- burden_sex_WHO_IC %>% 
+  select(sexe,
+         disease,
+         tot_cases, tot_cases_se, low_cases, sup_cases,
+         tot_daly, tot_daly_se, low_daly, sup_daly,
+         tot_medic_costs, tot_medic_costs_se, low_medic_costs, sup_medic_costs,
+         tot_soc_costs, low_soc_costs, sup_soc_costs) %>% 
+  mutate(disease = recode_factor(disease, 
+                                 bc = "Breast cancer", 
+                                 cc="Colon cancer" , 
+                                 cvd ="CVD" , 
+                                 dem ="Dementia",
+                                 diab2 ="T2 Diabetes" , 
+                                 dep = "Depression",
+                                 mort ="Mortality")) %>% 
+  rename(Sex = sexe)
+
+
+
+# Export HIA : total of prevented cases, DALY and saved costs per disease
+export(burden_sex_WHO_IC, here("output", "Tables", "Log linear", "WHO reco", "HIA_sex_WHOreco.xlsx"))
+
+
+
+## Additional prevented cases, DALY and saved costs, for each disease according to sex----
+add_burden_sex_WHO_IC <- burden_sex_WHO_IC %>%
+  mutate(across(
+    where(is.numeric),
+    ~ . - burden_sex_IC[[cur_column()]]
+  ))
+
+# Export additional HIA according to sex : additional prevented cases, DALY and saved costs per disease
+export(add_burden_sex_WHO_IC, here("output", "Tables", "Log linear", "WHO reco", "HIA_add_sex_WHOreco.xlsx"))
+
+
+
+
+################################################################################################################################
+#                                                      4. VISUALIZATION                                                        #
+################################################################################################################################
+
+# Plot : Cases prevented by walking in 2019 according to sex 
+cases_prevented_WHO <- ggplot() +
+  geom_bar(data = burden_sex_IC, 
+           mapping = aes(x = disease, y = tot_cases, fill = Sex, alpha = "2019 baseline"),
+           width = 0.7,
+           position = position_dodge2(0.7),
+           stat = "identity") +
+  
+  geom_errorbar(data = burden_sex_IC,
+                mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex, alpha = "2019 baseline"),
+                position = position_dodge(0.7),
+                width = 0.25) +
+  
+  scale_fill_manual(values = c("Female" = "darkorange1",
+                               "Male" = "chartreuse4")) +
+  
+  
+  geom_bar(data = burden_sex_WHO_IC, 
+           mapping = aes(x = disease, y = tot_cases, fill = Sex, alpha = "WHO recommendation (168 min/day)"),
+           width = 0.7,
+           position = position_dodge2(0.7),
+           stat = "identity") +
+  scale_alpha_manual(name   = "Scenario",
+                     values = c("2019 baseline" = 1, "WHO recommendation (168 min/day)" = 0.4)) +
+  
+  geom_errorbar(data = burden_sex_WHO_IC,
+                mapping = aes(x = disease, ymin = low_cases, ymax = sup_cases, group = Sex, alpha = "WHO recommendation (168 min/day)"),
+                position = position_dodge(0.7),
+                width = 0.25) +
+  
+  ylab("Cases prevented") +
+  xlab("Disease") +
+  theme_minimal()
+
+cases_prevented_WHO
+
+
+# Export plot
+ggsave(here("output", "Plots", "Log linear", "WHO reco", "plot_cases_WHOreco.png"), plot = cases_prevented_WHO)
+
+
+
+
+################################################################################################################################
+#                                                       5. DESCRIPTION                                                         #
+################################################################################################################################
+
+##############################################################
+#                   Total chronic diseases                   #
+##############################################################
+
+# Main analysis
+sum(morbidity_burden_IC[["tot_cases"]])
+
+# WHO reco
+morbidity_WHO_IC <- burden_WHO_IC %>% 
+  filter(disease != "Mortality")
+sum(morbidity_WHO_IC[["tot_cases"]])
+
+
+##############################################################
+#                        Total deaths                        #
+##############################################################
+# WHO reco
+mortality_WHO_IC <- burden_WHO_IC %>% 
+  filter(disease == "Mortality")
+
+mortality_WHO_IC[["tot_cases"]]
+
+
+##############################################################
+#                Ratio 168 min VS main analysis              #
+############################################################## 
+
+# Chronic diseases
+sum(morbidity_WHO_IC[["tot_cases"]]) / sum(morbidity_burden_IC[["tot_cases"]])
+
+# Mortality
+mortality_WHO_IC[["tot_cases"]] / mortality_burden_IC[["tot_cases"]]
+
+
+##############################################################
+#                Additional chronic diseases                 #
+##############################################################
+sum(morbidity_WHO_IC[["tot_cases"]]) - sum(morbidity_burden_IC[["tot_cases"]])
+
+
+
+##############################################################
+#                   Additional deaths                        #
+##############################################################
+mortality_WHO_IC[["tot_cases"]] - mortality_burden_IC[["tot_cases"]]
 
 
 
