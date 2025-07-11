@@ -9,12 +9,10 @@
   # HIA_disease_1000replicate.rds : Main analysis
   # HIA_disease_1000replicate.rds : Linear regression
 
-  # HIA_speed_disease.rds : Walking speed 5.3 km/h
-
 
 
 # Modified parameters - files outputted :
-  # Walking speed                     ~ HIA_walking_speed.xlsx
+  # Walking speed 5.3 km/h                     ~ HIA_walking_speed.xlsx
   # Linear regression
 
 
@@ -51,10 +49,10 @@ source(here("0_Functions.R"))
 
 
 # Import main analysis
-HIA_main <- import(here("output", "RDS", "Log linear", "HIA_disease_1000replicate.rds"))
+HIA_main <- import(here("output", "RDS", "Log linear", "2019", "HIA_disease_1000replicate.rds"))
 
 # Import linear regression
-HIA_linear <- import(here("output", "RDS", "HIA_disease_1000replicate.rds"))
+HIA_linear <- import(here("output", "RDS", "Linear", "2019", "HIA_disease_1000replicate.rds"))
 
 
 
@@ -107,7 +105,7 @@ for (dis in dis_vec) {
 }
 
 # Export the results of HIA outputs for all replications
-export(burden_speed_replicate, here("output", "RDS", "Log linear", "logHIA_speed_1000replicate.rds"))
+export(burden_speed_replicate, here("output", "RDS", "Log linear", "Sensitivity analysis", "logHIA_speed_1000replicate.rds"))
 
 
 ################################################################################################################################
@@ -115,7 +113,7 @@ export(burden_speed_replicate, here("output", "RDS", "Log linear", "logHIA_speed
 ################################################################################################################################
 
 # IMPORT DATA (to avoid re-generating Monte-Carlo replications)
-burden_speed_replicate <- import(here("output", "RDS", "Log linear", "logHIA_speed_1000replicate.rds"))
+burden_speed_replicate <- import(here("output", "RDS", "Log linear", "Sensitivity analysis", "logHIA_speed_1000replicate.rds"))
 
 
 ##############################################################
@@ -145,7 +143,6 @@ HIA_speed <- HIA_burden_IC(burden_speed, dis_vec, outcome_vec, calc_replicate_IC
 
   # Export results 
 export(HIA_speed, here("output", "Tables", "Log linear", "Sensitivity analysis", "HIA_speed_disease.xlsx"))
-export(HIA_speed, here("output", "RDS", "Log linear", "HIA_speed_disease.rds"))
 
 
 
@@ -159,7 +156,7 @@ export(HIA_speed, here("output", "RDS", "Log linear", "HIA_speed_disease.rds"))
 ################################################################################################################################
 
 # IMPORT DATA of HIA with the modified walking speed
-HIA_speed <- import(here("output", "RDS", "Log linear", "HIA_speed_disease.rds"))
+HIA_speed <- import(here("output", "Tables", "Log linear", "Sensitivity analysis", "HIA_speed_disease.xlsx"))
 
 
 
@@ -290,7 +287,7 @@ plot_sensi <- ggplot(sensi_data) +
 plot_sensi 
 
   # Export 
-ggsave(here("output", "Plots", "Log linear", "plot_sensitivity.png"))
+ggsave(here("output", "Plots", "Log linear", "Sensitivity analysis", "plot_sensitivity.png"))
 
 
 

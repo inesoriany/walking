@@ -156,7 +156,7 @@ burden_IC <- burden_IC %>%
 
 
 # Export HIA : total of prevented cases, DALY and saved costs per disease
-export(burden_IC, here("output", "Tables", "Linear", "HIA_walking_2019.xlsx"))
+export(burden_IC, here("output", "Tables", "Linear", "2019", "HIA_walking_2019.xlsx"))
 
 
 
@@ -218,7 +218,7 @@ burden_sex_IC <- burden_sex_age_IC %>%
             sup_medic_costs = sum(sup_medic_costs, na.rm = T))
 
   # Export HIA per sex : total of prevented cases, DALY and saved costs per disease
-export(burden_sex_IC, here("output", "Tables", "Linear", "HIA_sex_walking_2019.xlsx"))
+export(burden_sex_IC, here("output", "Tables", "Linear", "2019","HIA_sex_walking_2019.xlsx"))
 
 
 # Plot : Cases prevented by walking in 2019 according to sex 
@@ -233,7 +233,7 @@ cases_prevented <- ggplot(burden_sex_IC, aes(x = disease, y = tot_cases, ymin = 
 cases_prevented
 
   # Export plot
-ggsave(here("output", "Plots", "Linear", "plot_cases_prevented.png"), plot = cases_prevented)
+ggsave(here("output", "Plots", "Linear", "2019","plot_cases_prevented.png"), plot = cases_prevented)
 
 
 
@@ -268,7 +268,7 @@ daly_prevented <- ggplot(burden_age_IC, aes(x = age_grp.x, y = tot_daly, fill = 
 daly_prevented
 
   #Export plot
-ggsave(here("output", "Plots", "Linear", "plot_DALY_prevented.png"), plot = daly_prevented)
+ggsave(here("output", "Plots", "Linear", "2019","plot_DALY_prevented.png"), plot = daly_prevented)
 
 
 
@@ -327,7 +327,7 @@ cases_prevented_rev <- ggplot(burden_rev_IC, aes(x = disease, y = tot_cases, ymi
 cases_prevented_rev
 
 #Export plot
-ggsave(here("output", "Plots", "Linear", "plot_cases_per_rev.png"), plot = cases_prevented_rev)
+ggsave(here("output", "Plots", "Linear", "2019","plot_cases_per_rev.png"), plot = cases_prevented_rev)
 
 
 
@@ -386,7 +386,7 @@ deaths_prevented <- ggplot(prevented_death, aes(x = age_grp.x, y = tot_cases, ym
 deaths_prevented
 
 # Export plot
-ggsave(here("output", "Plots", "Linear", "plot_deaths_prevented.png"), plot = deaths_prevented)
+ggsave(here("output", "Plots", "Linear", "2019","plot_deaths_prevented.png"), plot = deaths_prevented)
 
 
 
@@ -408,7 +408,7 @@ YLL_prevented <- ggplot(prevented_death, aes(x = age_grp.x, y = tot_daly, ymin =
 YLL_prevented
 
 # Export plot : YLL prevented per sex by walking in 2019 
-ggsave(here("output", "Plots", "Linear", "plot_YLL_prevented.png"), plot = YLL_prevented)
+ggsave(here("output", "Plots", "Linear", "2019","plot_YLL_prevented.png"), plot = YLL_prevented)
 
 
 
@@ -459,7 +459,7 @@ unit_soc_value_2019 <- as.data.frame(t(quantile(unit_soc_2019, probs = c(0.025, 
 
     
 # Export : economic value of 1 km walked per scenario
-export(unit_soc_value_2019, here("output", "Tables", "Linear", "1km_soc_value.xlsx"))
+export(unit_soc_value_2019, here("output", "Tables", "Linear", "2019","1km_soc_value.xlsx"))
 
 
 
@@ -490,7 +490,7 @@ euro_unit_duration_2019<- euro_unit_2019 %>%
 
 
 # Export : Calculate distance and duration to save 1€ of medical costs in 2019
-export(euro_unit_duration_2019, here("output", "Tables", "Linear", "1€_km_duration.xlsx"))
+export(euro_unit_duration_2019, here("output", "Tables", "Linear", "2019","1€_km_duration.xlsx"))
 
 
 
@@ -518,7 +518,7 @@ soc_euro_unit_duration_2019<- soc_euro_unit_2019 %>%
 
 
 # Export : Calculate distance and duration to save 1€ of medical costs in 2019
-export(soc_euro_unit_duration_2019, here("output", "Tables", "Linear", "soc_1€_km_duration.xlsx"))
+export(soc_euro_unit_duration_2019, here("output", "Tables", "Linear", "2019","soc_1€_km_duration.xlsx"))
 
 
 
@@ -674,7 +674,7 @@ burden_step_IC <- burden_step_IC %>%
 
 
 # Export HIA : total of prevented cases, DALY and saved costs per disease
-export(burden_step_IC, here("output", "Tables", "Linear", "HIA_10000steps.xlsx"))
+export(burden_step_IC, here("output", "Tables", "Linear", "2019","HIA_10000steps.xlsx"))
 
 
 
@@ -720,7 +720,7 @@ cases_prevented_step
 
 
 # Export plot
-ggsave(here("output", "Plots", "Linear", "plot_cases_step.png"), plot = cases_prevented_step)
+ggsave(here("output", "Plots", "Linear", "2019","plot_cases_step.png"), plot = cases_prevented_step)
 
 
 
