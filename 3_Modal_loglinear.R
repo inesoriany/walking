@@ -123,7 +123,7 @@ for(dist in dist_vec){
 
 
 # Export HIA outcomes of 100 replications for each scenario of modal shifts
-export(burden_tot, here("output", "RDS","Log linear", "HIA_modal_shift_100replicate.rds"))
+export(burden_tot, here("output", "RDS","Log linear", "Modal shift", "HIA_modal_shift_100replicate.rds"))
 
 
 
@@ -134,7 +134,7 @@ export(burden_tot, here("output", "RDS","Log linear", "HIA_modal_shift_100replic
 ##############################################################
 
 # Load HIA outcomes of 100 replications for each scenario of modal shifts
-burden_tot <- import(here("output", "RDS", "Log linear", "HIA_modal_shift_100replicate.rds"))
+burden_tot <- import(here("output", "RDS", "Log linear", "Modal shift",  "HIA_modal_shift_100replicate.rds"))
 
 
 # GLOBAL
@@ -551,7 +551,7 @@ for (dist in dist_vec) {
 
 
 # Export replications - Total km walked per scenario
-export(tot_km_CO2_scenario, here("output", "RDS", "Log linear", "modalshift_tot_km_CO2.rds"))
+export(tot_km_CO2_scenario, here("output", "RDS", "Log linear", "Modal shift", "modalshift_tot_km_CO2.rds"))
 
 # Export replications - Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
 export(tot_km_CO2, here("output", "Tables", "Log linear", "Modal shift", "modalshift_tot_km_CO2_emit.xlsx"))
@@ -562,7 +562,7 @@ export(tot_km_CO2, here("output", "Tables", "Log linear", "Modal shift", "modals
 ##############################################################
 
 # Import replications - Total km walked per scenario with IC and CO2 emissions prevented per scenario with IC
-tot_km_CO2_scenario <- import(here("output", "RDS", "Log linear", "modalshift_tot_km_CO2.rds"))
+tot_km_CO2_scenario <- import(here("output", "RDS", "Log linear", "Modal shift", "modalshift_tot_km_CO2.rds"))
 
 
 # Heatmap (in kilotons)
@@ -684,12 +684,12 @@ for (dist in dist_vec) {
   }
 }
   # Export : time spent driving per scenario
-export(drive_time_scenario, here("output", "RDS", "modalshift_drive_time.rds"))
+export(drive_time_scenario, here("output", "RDS", "Modal shift", "modalshift_drive_time.rds"))
 
 
 
   # Load time spent driving per scenario ----
-drive_time_scenario <-  import(here("output", "RDS", "modalshift_drive_time.rds"))
+drive_time_scenario <-  import(here("output", "RDS", "Modal shift", "modalshift_drive_time.rds"))
 
 # Calculate time lost by walking 
 time_scenario <- left_join(walk_time_scenario, drive_time_scenario, by = c("distance", "percentage")) %>% 
