@@ -15,7 +15,10 @@
   # HIA_walking_2019.xlsx : Cases, daly, costs (medical + social) prevented by walking in 2019
   # plot_deaths_prevented.png : Deaths prevented per sex by walking in 2019
   # plot_YLL_prevented.png : YLL prevented per sex by walking in 2019 
+  # 1km_soc_value.xlsx : Social costs prevented for 1km walked
   # 1€_km_duration.xlsx : Distance and duration that saved 1€ in 2019
+  # soc_1€_km_duration.xlsx : distance and duration to save 1€ of social costs in 2019
+
 
 ## HIA 10,000 steps:
   # HIA_10000steps.xlsx
@@ -535,7 +538,7 @@ soc_euro_unit_duration_2019<- soc_euro_unit_2019 %>%
 
 
 
-# Export : Calculate distance and duration to save 1€ of medical costs in 2019
+# Export : Calculate distance and duration to save 1€ of intangible costs in 2019
 export(soc_euro_unit_duration_2019, here("output", "Tables", "Log linear", "2019", "soc_1€_km_duration.xlsx"))
 
 
