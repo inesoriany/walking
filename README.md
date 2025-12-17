@@ -1,6 +1,6 @@
 # Health benefits of walking
 
-[**Objectives :**]{.underline}
+**Objectives :**
 
 Using individual data from a nationally representative mobility survey, we conducted a burden of disease analysis to assess the incidence of diseases (morbidity) and the number of deaths prevented by walking in 2019.
 
@@ -8,7 +8,7 @@ We assessed the corresponding DALY prevented, direct medical cost savings and th
 
 Lastly, based on individual simulations, we assessed the likely additional benefits of shifting scenarios of short (\<2km) car trips to cycling.
 
-[**Health impact assessment :**]{.underline}
+**Health impact assessment :**
 
 -   **0_Datasets** : Creation of walkers and drivers datasets
 
